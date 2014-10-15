@@ -1,5 +1,6 @@
 import time
 import socket
+import exceptions
 
 from twisted.internet import task, defer
 
@@ -37,6 +38,7 @@ class Source(object):
         self.config = config
         self.t = task.LoopingCall(self.tick)
 
+        self.service = config['service']
         self.inter = float(config['interval'])
 
         self.queueBack = queueBack
@@ -52,3 +54,6 @@ class Source(object):
         event = yield defer.maybeDeferred(self.get)
 
         self.queueBack(event)
+
+    def get(self):
+        raise exceptions.NotImplementedError

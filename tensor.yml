@@ -9,5 +9,7 @@ sources:
     - service: load
       source: tensor.sources.linux.basic.LoadAverage
       interval: 2.0
-      critical: load > 1
       
+    - service: cpu
+      source: tensor.sources.linux.basic.CPU
+      interval: 2.0
