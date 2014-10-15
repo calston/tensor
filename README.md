@@ -6,4 +6,3 @@ piles of servers.
 
 (If you came looking for a maths framework I apologise for the deception.)
 
-(I'm still writing it, go away)
