@@ -9,19 +9,33 @@ from twisted.protocols.basic import Int32StringReceiver
 class RiemannProtocol(Int32StringReceiver):
     implements(ITensorProtocol)
 
-    def sendEvent(event):
+    def encodeMessage(self, event):
+        """Encode a Tensor event object in some rebranded archaic serialisatin
+        format called protobuf"""
+
         pbevent = proto_pb2.Event(
-            time=event.time,
+            time=int(event.time),
             state=event.state,
             service=event.service,
-            host=self.hostname,
+            host=event.hostname,
             description=event.description,
             tags=event.tags,
             ttl=60.0,
-            metric_=event.metric # Huh? Where?
         )
 
+        # I have no idea what I'm doing
+        if isinstance(event.metric, int):
+            pbevent.metric_sint64 = event.metric
+            pbevent.metric_f = float(event.metric)
+        else:
+            pbevent.metric_d = float(event.metric)
+            pbevent.metric_f = float(event.metric)
 
-    def sendMessage():
-        pass
+        # Should probably pool and merge events somewhere
+        message = proto_pb2.Msg(events=[pbevent])
+
+        return message.SerializeToString()
+
+    def sendEvent(self, event):
+        self.sendString(self.encodeMessage(event))
 
