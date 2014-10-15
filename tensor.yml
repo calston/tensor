@@ -1,8 +1,13 @@
 # A YAML (sorry) config file for Tensor 
 
+# Dequeue events and send to Riemann at this rate in seconds
+# This basically decides how "realtimey" the events are
+interval: 1.0
+
+# Sources
 sources:
     - service: load
       source: tensor.sources.linux.basic.LoadAverage
-      interval: 5
+      interval: 2.0
       critical: load > 1
       

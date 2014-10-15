@@ -43,3 +43,5 @@ class RiemannProtocol(Int32StringReceiver):
         """Send a Tensor Event to Riemann"""
         self.sendString(self.encodeMessage(events))
 
+    def stringReceived(self, string):
+        pass
