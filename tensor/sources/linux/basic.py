@@ -48,8 +48,29 @@ class CPU(Source):
         
         total_diff = total - prev_total
 
-        cpu_util = (total_diff - (idle - prev_idle))/float(total_diff)
+        if total_diff != 0:
+            cpu_util = (total_diff - (idle - prev_idle))/float(total_diff)
+        else:
+            cpu_util = 0.0
 
         self.cpu = (idle, total)
 
-        return Event('ok', self.service, 'CPU %', cpu_util)
+        return Event('ok', self.service, 
+            'CPU %s%%' % int(cpu_util*100), cpu_util)
+
+class Memory(Source):
+    implements(ITensorSource)
+
+    def get(self):
+        mem = open('/proc/meminfo')
+        dat = {}
+        for l in mem:
+            k, v = l.replace(':', '').split()[:2]
+            dat[k] = int(v)
+        
+        free = dat['MemFree'] + dat['Buffers'] + dat['Cached']
+        total = dat['MemTotal']
+        used = total - free
+
+        return Event('ok', self.service, 'Memory %s/%s' % (used, total), 
+                used/float(total))
