@@ -1,5 +1,5 @@
 from tensor.ihateprotobuf import proto_pb2
-from tensor.protocol.interface import ITensorProtocol
+from tensor.interfaces import ITensorProtocol
 
 from zope.interface import implements
 
@@ -9,10 +9,7 @@ from twisted.protocols.basic import Int32StringReceiver
 class RiemannProtocol(Int32StringReceiver):
     implements(ITensorProtocol)
 
-    def encodeMessage(self, event):
-        """Encode a Tensor event object in some rebranded archaic serialisatin
-        format called protobuf"""
-
+    def encodeEvent(self, event):
         pbevent = proto_pb2.Event(
             time=int(event.time),
             state=event.state,
@@ -31,11 +28,18 @@ class RiemannProtocol(Int32StringReceiver):
             pbevent.metric_d = float(event.metric)
             pbevent.metric_f = float(event.metric)
 
-        # Should probably pool and merge events somewhere
-        message = proto_pb2.Msg(events=[pbevent])
+        return pbevent
+
+    def encodeMessage(self, events):
+        """Encode a list of Tensor events with protobuf"""
+
+        message = proto_pb2.Msg(
+            events=[self.encodeEvent(e) for e in events]
+        )
 
         return message.SerializeToString()
 
-    def sendEvent(self, event):
-        self.sendString(self.encodeMessage(event))
+    def sendEvents(self, events):
+        """Send a Tensor Event to Riemann"""
+        self.sendString(self.encodeMessage(events))
 

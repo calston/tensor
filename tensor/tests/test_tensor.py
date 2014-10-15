@@ -5,7 +5,7 @@ from twisted.internet.endpoints import TCP4ClientEndpoint, connectProtocol
 
 from tensor.protocol import riemann
 
-from tensor.service import Event
+from tensor.objects import Event
 
 class Tests(unittest.TestCase):
     def test_riemann_protobuf(self):
@@ -14,7 +14,7 @@ class Tests(unittest.TestCase):
         event = Event('ok', 'sky', 'Sky has not fallen', 1.0)
 
         # Well, I guess we'll just assume this is right
-        message = proto.encodeMessage(event)
+        message = proto.encodeMessage([event])
 
     @defer.inlineCallbacks
     def test_riemann(self):
@@ -25,6 +25,7 @@ class Tests(unittest.TestCase):
        
         p = yield connectProtocol(end, riemann.RiemannProtocol())
 
-        yield p.sendEvent(event)
+        yield p.sendEvents([event])
 
         p.transport.loseConnection()
+

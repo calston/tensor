@@ -1,0 +1,8 @@
+# A YAML (sorry) config file for Tensor 
+
+sources:
+    - service: load
+      source: tensor.sources.linux.basic.LoadAverage
+      interval: 5
+      critical: load > 1
+      

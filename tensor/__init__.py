@@ -1,5 +1,5 @@
 from tensor import service
 
-def makeService():
-    return service.TensorService()
+def makeService(config):
+    return service.TensorService(config)
 

@@ -1,3 +1,5 @@
+import yaml
+
 from zope.interface import implements
  
 from twisted.python import usage
@@ -7,7 +9,9 @@ from twisted.application.service import IServiceMaker
 import tensor
  
 class Options(usage.Options):
-    optParameters = []
+    optParameters = [
+        ["config", "c", "tensor.yml", "Config file"],
+    ]
  
 class TensorServiceMaker(object):
     implements(IServiceMaker, IPlugin)
@@ -16,7 +20,8 @@ class TensorServiceMaker(object):
     options = Options
  
     def makeService(self, options):
-        return tensor.makeService()
+        config = yaml.load(open(options['config']))
+        return tensor.makeService(config)
  
 serviceMaker = TensorServiceMaker()
 

@@ -10,3 +10,8 @@ class ITensorProtocol(Interface):
         """Sends an event to this client"""
         pass
 
+class ITensorSource(Interface):
+    """Interface for Tensor metric sources"""
+
+    def get(self):
+        """Return this source data"""

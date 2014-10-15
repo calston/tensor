@@ -1,0 +1,6 @@
+*~
+*.pyc
+*.swp
+ve/
+_trial_temp/
+dropin.cache
