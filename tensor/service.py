@@ -14,16 +14,38 @@ class TensorService(service.Service):
         self.t = task.LoopingCall(self.tick)
         self.running = 0
         self.sources = []
-        self.proto = None
         self.events = []
+
+        self.factory = None
 
         # Read some config stuff
         self.inter = float(config['interval'])  # tick interval
         self.server = config.get('server', 'localhost')
         self.port = int(config.get('port', 5555))
         self.pressure = int(config.get('pressure', -1))
+        self.ttl = float(config.get('ttl', 60.0))
 
         self.setupSources(config)
+
+    def connectClient(self):
+        """Deferred which connects to Riemann"""
+        self.factory = riemann.RiemannClientFactory()
+
+        reactor.connectTCP(self.server, self.port, self.factory)
+
+        d = defer.Deferred()
+
+        def cb():
+            # Wait until we have a useful proto object
+            if hasattr(self.factory, 'proto') and self.factory.proto:
+                d.callback(self.factory.proto)
+            else:
+                reactor.callLater(0.01, cb)
+
+        cb()
+
+        return d
+
 
     def setupSources(self, config):
         """Sets up source objects from the given config"""
@@ -37,6 +59,9 @@ class TensorService(service.Service):
             # Import the module and get the object source we care about
             sourceObj = getattr(importlib.import_module(path), cl)
 
+            if not ('ttl' in source.keys()):
+                source['ttl'] = self.ttl
+
             self.sources.append(sourceObj(source, self.queueBack))
 
     def queueBack(self, event):
@@ -49,30 +74,33 @@ class TensorService(service.Service):
             events = self.events
             self.events = []
             
-            self.proto.sendEvents(events)
+            self.factory.proto.sendEvents(events)
 
     def tick(self):
-        if self.proto:
+        if self.factory.proto:
             # Check backpressure
             if (self.pressure < 0) or (self.proto.pressure <= self.pressure):
                 self.emptyEventQueue()
+        else:
+            # Check queue age and expire stale events
+            for i, e in enumerate(self.events):
+                if e.time < (time.time() - e.ttl):
+                    self.events.pop(i)
 
     @defer.inlineCallbacks
     def startService(self):
-        self.running = 1
-        self.t.start(self.inter)
-
-        # TODO: Make this a reconnecting client factory
-        endpoint = TCP4ClientEndpoint(reactor, self.server, self.port)
-
-        self.proto = yield connectProtocol(endpoint, riemann.RiemannProtocol())
+        yield self.connectClient()
 
         # Start sources internal timers
         for source in self.sources:
             source.startTimer()
+
+        self.running = 1
+        self.t.start(self.inter)
  
     def stopService(self):
         self.running = 0
         self.t.stop()
 
-        self.proto.transport.loseConnection()
+        if self.factory.proto:
+            self.factory.proto.transport.loseConnection()

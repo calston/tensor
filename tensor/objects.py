@@ -5,7 +5,7 @@ import exceptions
 from twisted.internet import task, defer
 
 class Event(object):
-    def __init__(self, state, service, description, metric, tags=[]):
+    def __init__(self, state, service, description, metric, ttl, tags=[]):
         """Construct an Event object
 
         Arguments:
@@ -20,8 +20,9 @@ class Event(object):
         self.state = state
         self.service = service
         self.description = description
-        self.tags = tags
         self.metric = metric
+        self.ttl = ttl
+        self.tags = tags
 
         self.time = time.time()
         self.hostname = socket.gethostbyaddr(socket.gethostname())[0]
@@ -40,6 +41,7 @@ class Source(object):
 
         self.service = config['service']
         self.inter = float(config['interval'])
+        self.ttl = float(config['ttl'])
 
         self.queueBack = queueBack
 
@@ -54,6 +56,9 @@ class Source(object):
         event = yield defer.maybeDeferred(self.get)
 
         self.queueBack(event)
+
+    def createEvent(self, state, description, metric):
+        return Event(state, self.service, description, metric, self.ttl)
 
     def get(self):
         raise exceptions.NotImplementedError

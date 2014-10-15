@@ -1,14 +1,21 @@
 # A YAML (sorry) config file for Tensor 
 
-# Server details
+# Server details (default: localhost, 5555)
 server: localhost
 port: 5555
 
+# Max unacked events (default: -1)
 # You can set an acceptable amount of backpressure here, this is calculated
 # by the number outstanding acknowledgements when the event queue is rolled up
 # -1 means you don't care, 0 makes everything synchronous - but Tensor will 
 # leak memory if it has to queue for a long time.
 pressure: -1
+
+# Default TTL for events (default: 60 seconds)
+# It should be noted if Tensor loses its connection to Riemann it will purge
+# queued events if their age exceeds the TTL.
+# Sources can also have a custom TTL
+ttl: 60.0
 
 # Dequeue events and send to Riemann at this rate in seconds. This basically
 # decides how "realtimey" the events are. If this is longer than your source
@@ -21,6 +28,7 @@ sources:
     - service: load
       source: tensor.sources.linux.basic.LoadAverage
       interval: 1.0
+      ttl: 3.0
       
     - service: cpu
       source: tensor.sources.linux.basic.CPU

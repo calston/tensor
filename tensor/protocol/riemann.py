@@ -4,6 +4,9 @@ from tensor.interfaces import ITensorProtocol
 from zope.interface import implements
 
 from twisted.protocols.basic import Int32StringReceiver
+from twisted.internet import protocol
+from twisted.python import log
+
 
 class RiemannProtocol(Int32StringReceiver):
     implements(ITensorProtocol)
@@ -19,7 +22,7 @@ class RiemannProtocol(Int32StringReceiver):
             host=event.hostname,
             description=event.description,
             tags=event.tags,
-            ttl=60.0,
+            ttl=event.ttl,
         )
 
         # I have no idea what I'm doing
@@ -48,3 +51,22 @@ class RiemannProtocol(Int32StringReceiver):
 
     def stringReceived(self, string):
         self.pressure -= 1
+
+class RiemannClientFactory(protocol.ReconnectingClientFactory):
+    def buildProtocol(self, addr):
+        self.resetDelay()
+        self.proto = RiemannProtocol()
+        return self.proto
+
+    def clientConnectionLost(self, connector, reason):
+        log.msg('Lost connection.  Reason:' + str(reason))
+        self.proto = None
+        protocol.ReconnectingClientFactory.clientConnectionLost(
+            self, connector, reason)
+
+    def clientConnectionFailed(self, connector, reason):
+        log.msg('Connection failed. Reason:' + str(reason))
+        self.proto = None
+        protocol.ReconnectingClientFactory.clientConnectionFailed(
+            self, connector, reason)
+

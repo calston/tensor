@@ -1,7 +1,7 @@
 from zope.interface import implements
 
 from tensor.interfaces import ITensorSource
-from tensor.objects import Event, Source
+from tensor.objects import Source
 
 class LoadAverage(Source):
     implements(ITensorSource)
@@ -9,7 +9,7 @@ class LoadAverage(Source):
     def get(self):
         la1 = open('/proc/loadavg', 'rt').read().split()[0]
 
-        return Event('ok', self.service, 'Load average', float(la1))
+        return self.createEvent('ok', 'Load average', float(la1))
 
 
 class DiskIO(Source):
@@ -42,7 +42,7 @@ class CPU(Source):
         if not self.cpu:
             # No initial values so just return zero on the first get
             self.cpu = (idle, total)
-            return Event('ok', self.service, 'CPU %', 0.0)
+            return self.createEvent('ok', 'CPU %', 0.0)
         
         prev_idle, prev_total = self.cpu
         
@@ -55,8 +55,7 @@ class CPU(Source):
 
         self.cpu = (idle, total)
 
-        return Event('ok', self.service, 
-            'CPU %s%%' % int(cpu_util*100), cpu_util)
+        return self.createEvent('ok', 'CPU %s%%' % int(cpu_util*100), cpu_util)
 
 class Memory(Source):
     implements(ITensorSource)
@@ -72,5 +71,5 @@ class Memory(Source):
         total = dat['MemTotal']
         used = total - free
 
-        return Event('ok', self.service, 'Memory %s/%s' % (used, total), 
+        return self.createEvent('ok', 'Memory %s/%s' % (used, total), 
                 used/float(total))
