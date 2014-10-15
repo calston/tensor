@@ -1,5 +1,15 @@
 # A YAML (sorry) config file for Tensor 
 
+# Server details
+server: localhost
+port: 5555
+
+# You can set an acceptable amount of backpressure here, this is calculated
+# by the number outstanding acknowledgements when the event queue is rolled up
+# -1 means you don't care, 0 makes everything synchronous - but Tensor will 
+# leak memory if it has to queue for a long time.
+pressure: -1
+
 # Dequeue events and send to Riemann at this rate in seconds. This basically
 # decides how "realtimey" the events are. If this is longer than your source
 # intervals, you'll get 'bursty' events, but they will retain the right
@@ -10,12 +20,12 @@ interval: 1.0
 sources:
     - service: load
       source: tensor.sources.linux.basic.LoadAverage
-      interval: 2.0
+      interval: 1.0
       
     - service: cpu
       source: tensor.sources.linux.basic.CPU
-      interval: 2.0
+      interval: 1.0
 
     - service: memory
       source: tensor.sources.linux.basic.Memory
-      interval: 2.0
+      interval: 1.0

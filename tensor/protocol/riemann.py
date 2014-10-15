@@ -5,9 +5,11 @@ from zope.interface import implements
 
 from twisted.protocols.basic import Int32StringReceiver
 
-
 class RiemannProtocol(Int32StringReceiver):
     implements(ITensorProtocol)
+
+    def __init__(self):
+        self.pressure = 0
 
     def encodeEvent(self, event):
         pbevent = proto_pb2.Event(
@@ -38,10 +40,11 @@ class RiemannProtocol(Int32StringReceiver):
         )
 
         return message.SerializeToString()
-
+    
     def sendEvents(self, events):
         """Send a Tensor Event to Riemann"""
+        self.pressure += 1
         self.sendString(self.encodeMessage(events))
 
     def stringReceived(self, string):
-        pass
+        self.pressure -= 1

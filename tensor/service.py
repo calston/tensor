@@ -13,10 +13,15 @@ class TensorService(service.Service):
     def __init__(self, config):
         self.t = task.LoopingCall(self.tick)
         self.running = 0
-        self.inter = float(config['interval'])  # tick interval
         self.sources = []
-
+        self.proto = None
         self.events = []
+
+        # Read some config stuff
+        self.inter = float(config['interval'])  # tick interval
+        self.server = config.get('server', 'localhost')
+        self.port = int(config.get('port', 5555))
+        self.pressure = int(config.get('pressure', -1))
 
         self.setupSources(config)
 
@@ -47,7 +52,10 @@ class TensorService(service.Service):
             self.proto.sendEvents(events)
 
     def tick(self):
-        reactor.callLater(0.1, self.emptyEventQueue)
+        if self.proto:
+            # Check backpressure
+            if (self.pressure < 0) or (self.proto.pressure <= self.pressure):
+                self.emptyEventQueue()
 
     @defer.inlineCallbacks
     def startService(self):
@@ -55,7 +63,7 @@ class TensorService(service.Service):
         self.t.start(self.inter)
 
         # TODO: Make this a reconnecting client factory
-        endpoint = TCP4ClientEndpoint(reactor, "localhost", 5555)
+        endpoint = TCP4ClientEndpoint(reactor, self.server, self.port)
 
         self.proto = yield connectProtocol(endpoint, riemann.RiemannProtocol())
 
