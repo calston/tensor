@@ -42,3 +42,7 @@ sources:
       source: tensor.sources.network.Ping
       interval: 1.0
       destination: 192.168.0.1
+
+    - service: http
+      interval: 5.0
+      source: tensor.sources.network.HTTP

@@ -1,9 +1,56 @@
-from twisted.internet import defer, utils
+import time
+
+from twisted.internet import defer, utils, reactor
+from twisted.web.client import Agent
+from twisted.web.http_headers import Headers
 
 from zope.interface import implements
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
+
+from tensor.utils import BodyReceiver
+
+class HTTP(Source):
+    implements(ITensorSource)
+
+    @defer.inlineCallbacks
+    def get(self):
+        agent = Agent(reactor)
+
+        method = self.config.get('method', 'GET')
+        url = self.config.get('url', 'http://%s/' % self.hostname)
+        match = self.config.get('match', None)
+
+        t0 = time.time()
+
+        request = yield agent.request(method, url,
+            Headers({'User-Agent': ['Tensor HTTP checker']}),
+        )
+
+        if request.length:
+            d = defer.Deferred()
+            request.deliverBody(BodyReceiver(d))
+            b = yield d
+            body = b.read()
+        else:
+            body = ""
+
+        t_delta = (time.time() - t0) * 1000
+
+        if match:
+            if (match in body):
+                state = 'ok'
+            else:
+                state = 'critical'
+        else:
+            state = 'ok'
+        
+        defer.returnValue(
+            self.createEvent(state, 'Latency to %s' % url, t_delta,
+                prefix="latency")
+        )
+
 
 class Ping(Source):
     implements(ITensorSource)
