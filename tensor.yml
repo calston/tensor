@@ -37,3 +37,8 @@ sources:
     - service: memory
       source: tensor.sources.linux.basic.Memory
       interval: 1.0
+
+    - service: ping
+      source: tensor.sources.network.Ping
+      interval: 1.0
+      destination: 192.168.0.1

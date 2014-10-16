@@ -65,9 +65,14 @@ class TensorService(service.Service):
             self.sources.append(sourceObj(source, self.queueBack))
 
     def queueBack(self, event):
-        """Callback that all event sources call when they have a new event"""
+        """Callback that all event sources call when they have a new event
+        or list of events
+        """
 
-        self.events.append(event)
+        if isinstance(event, list):
+            self.events.extend(event)
+        else:
+            self.events.append(event)
 
     def emptyEventQueue(self):
         if self.events:
@@ -103,4 +108,5 @@ class TensorService(service.Service):
         self.t.stop()
 
         if self.factory.proto:
+            self.factory.stopTrying()
             self.factory.proto.transport.loseConnection()
