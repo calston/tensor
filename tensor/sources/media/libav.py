@@ -9,6 +9,11 @@ from tensor.objects import Source
 
 
 class DarwinRTSP(Source):
+    """Makes avprobe requests of a Darwin RTSP sample stream
+
+    Source options:
+    destination: RTSP hostname, defaults to source or local hostname
+    """
     implements(ITensorSource)
 
     @defer.inlineCallbacks
