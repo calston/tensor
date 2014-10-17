@@ -63,6 +63,9 @@ class TensorService(service.Service):
             if not ('ttl' in source.keys()):
                 source['ttl'] = self.ttl
 
+            if not ('interval' in source.keys()):
+                source['interval'] = self.inter
+
             self.sources.append(sourceObj(source, self.queueBack))
 
     def queueBack(self, event):
