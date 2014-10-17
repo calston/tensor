@@ -61,7 +61,8 @@ class Source(object):
         and passes that result back to the queueBack method"""
         event = yield defer.maybeDeferred(self.get)
 
-        self.queueBack(event)
+        if event:
+            self.queueBack(event)
 
     def createEvent(self, state, description, metric, prefix=None):
         if prefix:

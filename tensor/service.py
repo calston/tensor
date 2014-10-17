@@ -24,6 +24,7 @@ class TensorService(service.Service):
         self.port = int(config.get('port', 5555))
         self.pressure = int(config.get('pressure', -1))
         self.ttl = float(config.get('ttl', 60.0))
+        self.stagger = float(config.get('stagger', 0.2))
 
         self.setupSources(config)
 
@@ -96,9 +97,13 @@ class TensorService(service.Service):
     def startService(self):
         yield self.connectClient()
 
+        stagger = 0
         # Start sources internal timers
         for source in self.sources:
-            source.startTimer()
+            # Stagger source timers, or use per-source start_delay
+            start_delay = float(source.config.get('start_delay', stagger))
+            reactor.callLater(start_delay, source.startTimer)
+            stagger += self.stagger
 
         self.running = 1
         self.t.start(self.inter)
