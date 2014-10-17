@@ -80,7 +80,6 @@ class Ping(Source):
             except Exception, e:
                 print("Could not parse response %s" % repr(out))
                 event = None
->>>>>>> 3972a94336fa6f98b825223df3a80162963a551f
 
         elif code == 1:
             # Host unreachable
