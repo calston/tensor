@@ -64,18 +64,22 @@ class Ping(Source):
 
         if code == 0:
             # Successful ping
-            out = out.strip('\n').split('\n')[-2:]
-            loss = int(out[0].split()[5].strip('%'))
+            try:
+                out = out.strip('\n').split('\n')[-2:]
+                loss = int(out[0].split()[5].strip('%'))
 
-            stat = out[1].split()[-2].split('/')
-            pmin, avg, pmax, mdev = [float(i) for i in stat]
+                stat = out[1].split()[-2].split('/')
+                pmin, avg, pmax, mdev = [float(i) for i in stat]
 
-            event = [
-                self.createEvent('ok', 'Latency to %s' % host, avg,
-                    prefix="latency"),
-                self.createEvent('ok', '%s%% loss to %s' % (loss,host), loss,
-                    prefix="loss"),
-            ]
+                event = [
+                    self.createEvent('ok', 'Latency to %s' % host, avg,
+                        prefix="latency"),
+                    self.createEvent('ok', '%s%% loss to %s' % (loss,host), loss,
+                        prefix="loss"),
+                ]
+            except Exception, e:
+                print("Could not parse response %s" % repr(out))
+                event = None
 
         elif code == 1:
             # Host unreachable
