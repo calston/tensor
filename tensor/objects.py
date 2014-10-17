@@ -65,10 +65,26 @@ class Source(object):
             self.queueBack(event)
 
     def createEvent(self, state, description, metric, prefix=None):
+        """Creates an Event object from the Source configuration"""
         if prefix:
             service_name = self.service + "_" + prefix
         else:
             service_name = self.service
+
+        # Dynamic state check (unless the check already set it)
+        if state == "ok":
+            critical = self.config.get('critical', {}).get(service_name, None)
+            warn = self.config.get('warning', {}).get(service_name, None)
+
+            if warn:
+                s = eval("service %s" % warn, {'service': metric})
+                if s:
+                    state = 'warning'
+
+            if critical:
+                s = eval("service %s" % critical, {'service': metric})
+                if s:
+                    state = 'critical'
 
         return Event(state, service_name, description, metric, self.ttl,
             hostname = self.hostname

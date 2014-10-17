@@ -27,22 +27,32 @@ interval: 1.0
 sources:
     - service: load
       source: tensor.sources.linux.basic.LoadAverage
-      interval: 1.0
+      interval: 2.0
       ttl: 3.0
       
     - service: cpu
       source: tensor.sources.linux.basic.CPU
-      interval: 1.0
+      interval: 2.0
+      critical: {
+        cpu: "> 0.1"
+      }
 
     - service: memory
       source: tensor.sources.linux.basic.Memory
-      interval: 1.0
+      interval: 2.0
 
     - service: ping
       source: tensor.sources.network.Ping
-      interval: 1.0
+      interval: 2.0
       destination: 192.168.0.1
 
     - service: http
       interval: 5.0
       source: tensor.sources.network.HTTP
+      critical: {
+        http_latency: "> 2.0"
+      }
+      warning: {
+        http_latency: "> 1.0"
+      }
+
