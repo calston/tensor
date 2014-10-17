@@ -106,6 +106,60 @@ ProcessCount check::
 
 For more information please read the Twisted documentation at https://twistedmatrix.com/trac/wiki/Documentation
 
-It's also interesting to note that, there is nothing stopping you from starting
-listening services within a source which processes and relays events to Riemann
-implementing some protocol.
+Thinking outside the box
+========================
+
+Historically monitoring systems are poorly architected, self restricting and
+terribly inflexible. To demonstrate how Tensor offers a different concept
+to the boring status quo it's interesting to note that there is nothing
+preventing you from starting a listening service directly within a source which
+processes and relays events to Riemann implementing some protocol.
+
+Here is an example of a source which listens for TCP connections to port
+8000, accepting any number on a line and passing that to the event queue::
+
+    from twisted.internet.protocol import Factory
+    from twisted.protocols.basic import LineReceiver
+    from twisted.internet import reactor
+
+    from zope.interface import implements
+
+    from tensor.interfaces import ITensorSource
+    from tensor.objects import Source
+
+    class Numbers(LineReceiver):
+        def __init__(self, source):
+            self.source = source
+
+        def lineReceived(self, line):
+            """
+            Send any numbers received back to the Tensor queue
+            """
+            print repr(line)
+            try:
+                num = float(line)
+                self.source.queueBack(
+                    self.source.createEvent('ok', 'Number: %s' % num, num)
+                )
+            except:
+                pass
+
+    class NumbersFactory(Factory):
+        def __init__(self, source):
+            self.source = source
+
+        def buildProtocol(self, addr):
+            return Numbers(self.source)
+
+    class NumberProxy(Source):
+        implements(ITensorSource)
+
+        def startTimer(self):
+            # Override starting the source timer, we don't need it
+            f = NumbersFactory(self)
+            reactor.listenTCP(8000, f)
+
+        def get(self):
+            # Implement the get method, but we can ignore it
+            pass
+
