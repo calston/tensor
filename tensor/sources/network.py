@@ -67,7 +67,7 @@ class Ping(Source):
             out = out.strip('\n').split('\n')[-2:]
             loss = int(out[0].split()[5].strip('%'))
 
-            stat = out[1].split()[-2].split('/')
+            stat = out[1].split()[3].split('/')
             pmin, avg, pmax, mdev = [float(i) for i in stat]
 
             event = [
