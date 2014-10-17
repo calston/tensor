@@ -75,4 +75,4 @@ class Source(object):
         )
 
     def get(self):
-        raise exceptions.NotImplementedError
+        raise exceptions.NotImplementedError()
