@@ -1,9 +1,6 @@
 from setuptools import setup
 
 
-def listify(filename):
-    return filter(None, open(filename, 'r').read().strip('\n').split('\n'))
-
 setup(
     name="tensor",
     version='0.0.1',
@@ -20,7 +17,11 @@ setup(
         'twisted.plugins': ['twisted/plugins/tensor_plugin.py']
     },
     include_package_data=True,
-    install_requires=listify('requirements.txt'),
+    install_requires=[
+        'Twisted',
+        'PyYaml',
+        'protobuf'
+    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: System Administrators',
