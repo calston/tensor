@@ -4,8 +4,6 @@ import importlib
 from twisted.application import service
 from twisted.internet import task, reactor, defer
 
-from twisted.internet.endpoints import TCP4ClientEndpoint, connectProtocol
-
 from tensor.protocol import riemann
 
 
