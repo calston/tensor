@@ -11,7 +11,7 @@ class Tests(unittest.TestCase):
     def test_riemann_protobuf(self):
         proto = riemann.RiemannProtocol()
 
-        event = Event('ok', 'sky', 'Sky has not fallen', 1.0)
+        event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0)
 
         # Well, I guess we'll just assume this is right
         message = proto.encodeMessage([event])
@@ -19,7 +19,7 @@ class Tests(unittest.TestCase):
     @defer.inlineCallbacks
     def test_riemann(self):
 
-        event = Event('ok', 'sky', 'Sky has not fallen', 1.0)
+        event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0)
 
         end = TCP4ClientEndpoint(reactor, "localhost", 5555)
        
