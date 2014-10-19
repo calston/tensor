@@ -4,7 +4,7 @@ Getting started
 Installation
 ============
 
-Tensor can be installed with from PyPi with pip::
+Tensor can be installed from PyPi with pip::
 
     pip install tensor
 
