@@ -1,6 +1,7 @@
 from StringIO import StringIO
 from twisted.internet import protocol
 
+
 class BodyReceiver(protocol.Protocol):
     """ Simple buffering consumer for body objects """
     def __init__(self, finished):

@@ -1,3 +1,11 @@
+"""
+.. module:: network
+   :platform: Unix
+   :synopsis: A source module for network checks
+
+.. moduleauthor:: Colin Alston <colin@imcol.in>
+"""
+
 import time
 
 from twisted.internet import defer, utils, reactor
@@ -12,6 +20,20 @@ from tensor.objects import Source
 from tensor.utils import BodyReceiver
 
 class HTTP(Source):
+    """Performs an HTTP request
+
+    **Configuration arguments:**
+    
+    :method: HTTP request method to use
+    :type method: str.
+    :match: A text string to match in the document when it is correct
+    :type match: str.
+    
+    **Metrics:**
+
+    :(service name)_latency: Time to complete request
+    """
+
     implements(ITensorSource)
 
     @defer.inlineCallbacks
@@ -53,6 +75,22 @@ class HTTP(Source):
 
 
 class Ping(Source):
+    """Performs an Ping checks against a destination
+
+    **Configuration arguments:**
+    
+    :destination: Host name or IP address to ping
+    :type method: str.
+
+    **Metrics:**
+
+    :(service name)_latency: Ping latency
+    :(service name)_loss: Packet loss
+
+    You can also override the `hostname` argument to make it match
+    metrics from that host.
+    """
+
     implements(ITensorSource)
 
     @defer.inlineCallbacks

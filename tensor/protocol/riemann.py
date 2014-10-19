@@ -9,12 +9,15 @@ from twisted.python import log
 
 
 class RiemannProtocol(Int32StringReceiver):
+    """Riemann protobuf protocol
+    """
     implements(ITensorProtocol)
 
     def __init__(self):
         self.pressure = 0
 
     def encodeEvent(self, event):
+        """Adapts an Event object to a Riemann protobuf event Event"""
         pbevent = proto_pb2.Event(
             time=int(event.time),
             state=event.state,
@@ -53,6 +56,8 @@ class RiemannProtocol(Int32StringReceiver):
         self.pressure -= 1
 
 class RiemannClientFactory(protocol.ReconnectingClientFactory):
+    """A reconnecting client factory which creates RiemannProtocol instances
+    """
     def buildProtocol(self, addr):
         self.resetDelay()
         self.proto = RiemannProtocol()

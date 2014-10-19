@@ -109,8 +109,8 @@ For more information please read the Twisted documentation at https://twistedmat
 Thinking outside the box
 ========================
 
-Historically monitoring systems are poorly architected, self restricting and
-terribly inflexible. To demonstrate how Tensor offers a different concept
+Historically monitoring systems are poorly architected, and terribly
+inflexible. To demonstrate how Tensor offers a different concept
 to the boring status quo it's interesting to note that there is nothing
 preventing you from starting a listening service directly within a source which
 processes and relays events to Riemann implementing some protocol.
@@ -162,4 +162,3 @@ Here is an example of a source which listens for TCP connections to port
         def get(self):
             # Implement the get method, but we can ignore it
             pass
-

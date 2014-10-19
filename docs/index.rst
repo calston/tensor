@@ -16,6 +16,16 @@ Contents:
     start
     sources
 
+
+API Documentation:
+
+.. toctree::
+    :maxdepth: 2
+
+    api/tensor.rst
+    api/protocol.rst
+    api/sources.rst
+
 Indices and tables
 ==================
 

@@ -10,6 +10,10 @@ from tensor.protocol import riemann
 
 
 class TensorService(service.Service):
+    """ Tensor service
+    
+    Runs timers, configures sources and and manages the queue
+    """
     def __init__(self, config):
         self.t = task.LoopingCall(self.tick)
         self.running = 0

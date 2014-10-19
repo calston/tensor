@@ -2,9 +2,7 @@ from zope.interface import Interface
 
 
 class ITensorProtocol(Interface):
-    """
-    Interface for Tensor client protocols
-    """
+    """Interface for Tensor client protocols"""
 
     def sendEvent(self, event):
         """Sends an event to this client"""
@@ -15,3 +13,4 @@ class ITensorSource(Interface):
 
     def get(self):
         """Return this source data"""
+        pass

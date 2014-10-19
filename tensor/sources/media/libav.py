@@ -10,10 +10,20 @@ from tensor.objects import Source
 
 class DarwinRTSP(Source):
     """Makes avprobe requests of a Darwin RTSP sample stream
+    (sample_100kbit.mp4)
 
-    Source options:
-    destination: RTSP hostname, defaults to source or local hostname
+    **Configuration arguments:**
+
+    :destination: Host name or IP address to check
+    :type method: str.
+
+    **Metrics:**
+    :(service name): Time to complete request
+
+    You can also override the `hostname` argument to make it match
+    metrics from that host.
     """
+
     implements(ITensorSource)
 
     @defer.inlineCallbacks

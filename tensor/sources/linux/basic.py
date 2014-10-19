@@ -4,6 +4,12 @@ from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 
 class LoadAverage(Source):
+    """Reports system load average for the current host
+
+    **Metrics:**
+
+    :(service name): Load average
+    """
     implements(ITensorSource)
 
     def get(self):
@@ -20,6 +26,12 @@ class DiskIO(Source):
         return None
 
 class CPU(Source):
+    """Reports system CPU utilisation as a percentage/100
+
+    **Metrics:**
+
+    :(service name): Percentage CPU utilisation
+    """
     implements(ITensorSource)
 
     def __init__(self, config, qb):
@@ -58,8 +70,14 @@ class CPU(Source):
         return self.createEvent('ok', 'CPU %s%%' % int(cpu_util*100), cpu_util)
 
 class Memory(Source):
-    implements(ITensorSource)
+    """Reports system memory utilisation as a percentage/100
 
+    **Metrics:**
+
+    :(service name): Percentage memory utilisation
+    """
+    implements(ITensorSource)
+ 
     def get(self):
         mem = open('/proc/meminfo')
         dat = {}
