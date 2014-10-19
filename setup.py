@@ -1,16 +1,15 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 setup(
     name="tensor",
-    version='0.0.2',
+    version='0.0.3',
     url='http://github.com/calston/tensor',
     license='MIT',
     description="A Twisted based monitoring agent for Riemann",
     author='Colin Alston',
     author_email='colin.alston@gmail.com',
-    packages=[
-        "tensor",
+    packages=find_packages() + [
         "twisted.plugins",
     ],
     package_data={
