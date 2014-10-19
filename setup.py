@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="tensor",
-    version='0.0.1',
+    version='0.0.2',
     url='http://github.com/calston/tensor',
     license='MIT',
     description="A Twisted based monitoring agent for Riemann",
