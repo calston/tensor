@@ -34,4 +34,12 @@ class Tests(unittest.TestCase):
 
         r = yield s.get()
 
+    @defer.inlineCallbacks
+    def test_disk_space(self):
+        def qb(_):
+            print _
+
+        s = basic.DiskFree({'interval': 1.0, 'service': 'df', 'ttl': 60}, qb)
+
+        r = yield s.get()
 

@@ -1,5 +1,7 @@
 from zope.interface import implements
 
+from twisted.internet import defer, utils
+
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 
@@ -91,3 +93,32 @@ class Memory(Source):
 
         return self.createEvent('ok', 'Memory %s/%s' % (used, total), 
                 used/float(total))
+
+class DiskFree(Source):
+    """Returns the free space for all mounted filesystems
+
+    **Metrics:**
+
+    :(service name)_(device): Used space (%)
+    """
+    implements(ITensorSource)
+
+    @defer.inlineCallbacks
+    def get(self):
+        out, err, code = yield utils.getProcessOutputAndValue(
+            '/bin/df', args=('-lPx','tmpfs',))
+
+        out = [i.split() for i in out.strip('\n').split('\n')[1:]]
+
+        events = []
+
+        for disk, size, used, free, util, mount in out:
+            util = int(util.strip('%'))
+            events.append(
+                self.createEvent('ok', 'Disk usage %s' % (util),
+                    util, prefix=disk)
+            )
+
+
+        defer.returnValue(events)
+
