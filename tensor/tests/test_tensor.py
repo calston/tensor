@@ -7,6 +7,8 @@ from tensor.protocol import riemann
 
 from tensor.objects import Event
 
+from tensor.utils import fork
+
 class Tests(unittest.TestCase):
     def test_riemann_protobuf(self):
         proto = riemann.RiemannProtocol()
@@ -28,4 +30,21 @@ class Tests(unittest.TestCase):
         yield p.sendEvents([event])
 
         p.transport.loseConnection()
+
+    @defer.inlineCallbacks
+    def test_utils_fork(self):
+        o, e, c = yield fork('echo', args=('hi',))
+
+        self.assertEquals(o, "hi\n")
+        self.assertEquals(c, 0)
+
+    @defer.inlineCallbacks
+    def test_utils_fork_timeout(self):
+        died = False
+        try:
+            o, e, c = yield fork('sleep', args=('2',), timeout=0.1)
+        except:
+            died = True
+
+        self.assertTrue(died)
 
