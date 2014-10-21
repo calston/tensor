@@ -113,12 +113,12 @@ class DiskFree(Source):
         events = []
 
         for disk, size, used, free, util, mount in out:
-            util = int(util.strip('%'))
-            events.append(
-                self.createEvent('ok', 'Disk usage %s' % (util),
-                    util, prefix=disk)
-            )
-
+            if disk != "udev":
+                util = int(util.strip('%'))
+                events.append(
+                    self.createEvent('ok', 'Disk usage %s' % (util),
+                        util, prefix=disk)
+                )
 
         defer.returnValue(events)
 
