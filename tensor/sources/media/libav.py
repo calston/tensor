@@ -33,7 +33,7 @@ class DarwinRTSP(Source):
 
         t0 = time.time()
         out, err, code = yield fork('/usr/bin/avprobe',
-            args=('rtsp://%s/sample_100kbit.mp4' % host, ))
+            args=('rtsp://%s/sample_100kbit.mp4' % host, ), timeout=30.0)
 
         t_delta = (time.time() - t0) * 1000
 
