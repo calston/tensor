@@ -1,9 +1,10 @@
 from zope.interface import implements
 
-from twisted.internet import defer, utils
+from twisted.internet import defer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
+from tensor.utils import fork
 
 class ProcessCount(Source):
     """Returns the ps count on the system
@@ -16,8 +17,7 @@ class ProcessCount(Source):
 
     @defer.inlineCallbacks
     def get(self):
-        out, err, code = yield utils.getProcessOutputAndValue('/bin/ps',
-            args=('-e',))
+        out, err, code = yield fork('/bin/ps', args=('-e',))
 
         count = len(out.strip('\n').split('\n'))
 

@@ -1,11 +1,12 @@
 import time
 
-from twisted.internet import defer, utils
+from twisted.internet import defer
 
 from zope.interface import implements
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
+from tensor.utils import fork
 
 
 class DarwinRTSP(Source):
@@ -31,7 +32,7 @@ class DarwinRTSP(Source):
         host = self.config.get('destination', self.hostname)
 
         t0 = time.time()
-        out, err, code = yield utils.getProcessOutputAndValue('/usr/bin/avprobe',
+        out, err, code = yield fork('/usr/bin/avprobe',
             args=('rtsp://%s/sample_100kbit.mp4' % host, ))
 
         t_delta = (time.time() - t0) * 1000

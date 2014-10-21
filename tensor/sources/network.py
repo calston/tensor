@@ -8,7 +8,7 @@
 
 import time
 
-from twisted.internet import defer, utils, reactor
+from twisted.internet import defer, reactor
 from twisted.web.client import Agent
 from twisted.web.http_headers import Headers
 
@@ -17,7 +17,7 @@ from zope.interface import implements
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 
-from tensor.utils import BodyReceiver
+from tensor.utils import BodyReceiver, fork
 
 class HTTP(Source):
     """Performs an HTTP request
@@ -97,8 +97,8 @@ class Ping(Source):
     def get(self):
         host = self.config.get('destination', self.hostname)
 
-        out, err, code = yield utils.getProcessOutputAndValue('/bin/ping',
-            args=('-q', '-n', '-c', '5', '-i', '0.2', host))
+        out, err, code = yield fork('/bin/ping',
+            args=('-q', '-n', '-c', '5', '-i', '0.2', host), timeout=30.0)
 
         if code == 0:
             # Successful ping

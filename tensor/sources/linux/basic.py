@@ -1,9 +1,10 @@
 from zope.interface import implements
 
-from twisted.internet import defer, utils
+from twisted.internet import defer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
+from tensor.utils import fork
 
 class LoadAverage(Source):
     """Reports system load average for the current host
@@ -105,8 +106,7 @@ class DiskFree(Source):
 
     @defer.inlineCallbacks
     def get(self):
-        out, err, code = yield utils.getProcessOutputAndValue(
-            '/bin/df', args=('-lPx','tmpfs',))
+        out, err, code = yield fork('/bin/df', args=('-lPx','tmpfs',))
 
         out = [i.split() for i in out.strip('\n').split('\n')[1:]]
 
