@@ -8,6 +8,13 @@ tensor.sources.network
    :members:
    :show-inheritance:
 
+tensor.sources.munin
+====================
+
+.. automodule:: tensor.sources.munin
+   :members:
+   :show-inheritance:
+
 tensor.sources.linux
 ====================
 
