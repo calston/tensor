@@ -15,6 +15,7 @@ Contents:
 
     start
     sources
+    examples
 
 
 API Documentation:
