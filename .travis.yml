@@ -12,4 +12,4 @@ script:
     - trial tensor
 
 after_script:
-    - sudo /etc/init.d/riemann start
+    - sudo /etc/init.d/riemann stop
