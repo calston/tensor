@@ -1,9 +1,12 @@
+from struct import pack, unpack, calcsize
+
 from tensor.ihateprotobuf import proto_pb2
 from tensor.interfaces import ITensorProtocol
 
 from zope.interface import implements
 
 from twisted.protocols.basic import Int32StringReceiver
+from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import protocol
 from twisted.python import log
 
@@ -75,3 +78,22 @@ class RiemannClientFactory(protocol.ReconnectingClientFactory):
         protocol.ReconnectingClientFactory.clientConnectionFailed(
             self, connector, reason)
 
+class RiemannUDP(RiemannProtocol, DatagramProtocol):
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.pressure = 0
+
+    def datagramReceived(self, data, (host, port)):
+        self.pressure -= 1
+
+    def sendString(self, string):
+        """
+        Send a prefixed string to the other end of the connection.
+
+        @param string: The string to send.  The necessary framing (length
+            prefix, etc) will be added.
+        @type string: C{bytes}
+        """
+
+        self.transport.write(string, (self.host, self.port))
