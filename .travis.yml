@@ -1,0 +1,15 @@
+language: python
+python:
+  - 2.7
+install:
+    - pip install .
+before_install:
+    - wget http://aphyr.com/riemann/riemann_0.2.6_all.deb
+    - sudo apt-get install openjdk-7-jre
+    - sudo dpkg -i riemann_0.2.6_all.deb
+    - sudo /etc/init.d/riemann start
+script:
+    - trial tensor
+
+after_script:
+    - sudo /etc/init.d/riemann start
