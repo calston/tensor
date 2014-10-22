@@ -87,6 +87,9 @@ class MuninNode(Source):
         creator = ClientCreator(reactor, MuninProtocol)
         proto = yield creator.connectTCP(host, port)
 
+        # Announce our capabilities 
+        yield proto.sendCommand('cap multigraph')
+
         listout = yield proto.sendCommand('list')
         plug_list = listout.split()
 
@@ -96,6 +99,7 @@ class MuninNode(Source):
             # Retrive the configuration for this plugin
             config = yield proto.sendCommand('config %s' % plug, True)
             plugin_config = {}
+            multi = None
             for r in config:
                 name, val = r.split(' ', 1)
                 if '.' in name:
@@ -115,56 +119,57 @@ class MuninNode(Source):
             plugin_metrics = {}
             for m in metrics:
                 name, val = m.split(' ', 1)
-                metric, key = name.split('.')
+                if name != 'multigraph':
+                    metric, key = name.split('.')
 
-                base = '%s.%s' % (plug, metric)
-                
-                m_type = plugin_config.get('%s.type' % base, 'GAUGE')
-                val = float(val)
+                    base = '%s.%s' % (plug, metric)
+                    
+                    m_type = plugin_config.get('%s.type' % base, 'GAUGE')
+                    val = float(val)
 
-                if m_type == 'GAUGE':
-                    # Standard gauge, just passed through
-                    plugin_metrics[metric] = val
-                elif m_type == 'COUNTER':
-                    # Wrapping counter
-                    last = self.cache.get(base, None)
-                    if last is not None:
-                        ltime = self.cache[base+'.rtime']
-                        t_delta = time.time() - ltime
-                        if val < last:
-                            # wrap
-                            if last > 4294967295:
-                                # uint64
-                                rem = 18446744073709551615 - last
-                            elif last < 2147483647:
-                                rem = 2147483647 - last
+                    if m_type == 'GAUGE':
+                        # Standard gauge, just passed through
+                        plugin_metrics[metric] = val
+                    elif m_type == 'COUNTER':
+                        # Wrapping counter
+                        last = self.cache.get(base, None)
+                        if last is not None:
+                            ltime = self.cache[base+'.rtime']
+                            t_delta = time.time() - ltime
+                            if val < last:
+                                # wrap
+                                if last > 4294967295:
+                                    # uint64
+                                    rem = 18446744073709551615 - last
+                                elif last < 2147483647:
+                                    rem = 2147483647 - last
+                                else:
+                                    rem = 4294967295 - last
+
+                                change = rem + val
                             else:
-                                rem = 4294967295 - last
+                                change = val - last
 
-                            change = rem + val
-                        else:
+                            plugin_metrics[metric] = change/t_delta
+                        
+                        self.cache[base+'.rtime'] = time.time()
+                        self.cache[base] = val
+                    elif m_type == 'DERIVE':
+                        # Counter without wrap, and a min
+                        last = self.cache.get(base, None)
+
+                        if last is not None:
+                            ltime = self.cache[base+'.rtime']
+                            t_delta = time.time() - ltime
+                            p_min = int(plugin_config.get('%s.min' % base, 0))
+
                             change = val - last
 
-                        plugin_metrics[metric] = change/t_delta
-                    
-                    self.cache[base+'.rtime'] = time.time()
-                    self.cache[base] = val
-                elif m_type == 'DERIVE':
-                    # Counter without wrap, and a min
-                    last = self.cache.get(base, None)
-
-                    if last is not None:
-                        ltime = self.cache[base+'.rtime']
-                        t_delta = time.time() - ltime
-                        p_min = int(plugin_config.get('%s.min' % base, 0))
-
-                        change = val - last
-
-                        if change >= p_min:
-                            plugin_metrics[metric] = change/t_delta
-                    
-                    self.cache[base+'.rtime'] = time.time()
-                    self.cache[base] = val
+                            if change >= p_min:
+                                plugin_metrics[metric] = change/t_delta
+                        
+                        self.cache[base+'.rtime'] = time.time()
+                        self.cache[base] = val
 
             # Add all the metrics to events
             for k, v in plugin_metrics.items():
