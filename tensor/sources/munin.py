@@ -99,7 +99,6 @@ class MuninNode(Source):
             # Retrive the configuration for this plugin
             config = yield proto.sendCommand('config %s' % plug, True)
             plugin_config = {}
-            multi = None
             for r in config:
                 name, val = r.split(' ', 1)
                 if '.' in name:
