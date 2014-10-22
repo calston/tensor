@@ -21,6 +21,7 @@ localhost:5555) and the queue interval::
     server: localhost
     port: 5555
     interval: 1.0
+    proto: udp
 
 Tensors checks are Python classes (called sources) which are instantiated
 with the configuration block which defines them. Rather than being one-shot
