@@ -100,7 +100,7 @@ class DiskFree(Source):
 
     **Metrics:**
 
-    :(service name)_(device): Used space (%)
+    :(service name).(device): Used space (%)
     """
     implements(ITensorSource)
 

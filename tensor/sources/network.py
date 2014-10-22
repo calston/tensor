@@ -31,7 +31,7 @@ class HTTP(Source):
     
     **Metrics:**
 
-    :(service name)_latency: Time to complete request
+    :(service name).latency: Time to complete request
     """
 
     implements(ITensorSource)
@@ -84,8 +84,8 @@ class Ping(Source):
 
     **Metrics:**
 
-    :(service name)_latency: Ping latency
-    :(service name)_loss: Packet loss
+    :(service name).latency: Ping latency
+    :(service name).loss: Packet loss
 
     You can also override the `hostname` argument to make it match
     metrics from that host.

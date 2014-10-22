@@ -65,8 +65,8 @@ For example, the Ping check returns both latency and packet loss::
     interval: 60.0
     destination: 8.8.8.8
     critical: {
-        googledns_latency: "> 100",
-        googledns_loss: "> 0"
+        googledns.latency: "> 100",
+        googledns.loss: "> 0"
     }
 
 This will ping `8.8.8.8` every 60 seconds and raise a critical alert for
