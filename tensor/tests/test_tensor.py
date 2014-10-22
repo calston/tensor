@@ -44,7 +44,7 @@ class Tests(unittest.TestCase):
         event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0)
         
         protocol = riemann.RiemannUDP('127.0.0.1', 5555)
-        endpoint = reactor.listenUDP(0, protocol)
+        self.endpoint = reactor.listenUDP(0, protocol)
 
         yield protocol.sendEvents([event])
 
