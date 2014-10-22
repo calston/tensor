@@ -124,7 +124,11 @@ class MuninNode(Source):
                     base = '%s.%s' % (plug, metric)
                     
                     m_type = plugin_config.get('%s.type' % base, 'GAUGE')
-                    val = float(val)
+
+                    try:
+                        val = float(val)
+                    except:
+                        continue
 
                     if m_type == 'GAUGE':
                         # Standard gauge, just passed through
