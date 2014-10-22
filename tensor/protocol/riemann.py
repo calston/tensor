@@ -1,5 +1,3 @@
-from struct import pack, unpack, calcsize
-
 from tensor.ihateprotobuf import proto_pb2
 from tensor.interfaces import ITensorProtocol
 
@@ -79,21 +77,13 @@ class RiemannClientFactory(protocol.ReconnectingClientFactory):
             self, connector, reason)
 
 class RiemannUDP(RiemannProtocol, DatagramProtocol):
+    """UDP datagram protocol for Riemann
+    """
     def __init__(self, host, port):
         self.host = host
         self.port = port
         self.pressure = 0
 
-    def datagramReceived(self, data, (host, port)):
-        self.pressure -= 1
-
     def sendString(self, string):
-        """
-        Send a prefixed string to the other end of the connection.
-
-        @param string: The string to send.  The necessary framing (length
-            prefix, etc) will be added.
-        @type string: C{bytes}
-        """
-
         self.transport.write(string, (self.host, self.port))
+        self.pressure -= 1
