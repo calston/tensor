@@ -85,18 +85,18 @@ ProcessCount check::
 
     from zope.interface import implements
 
-    from twisted.internet import defer, utils
+    from twisted.internet import defer
 
     from tensor.interfaces import ITensorSource
     from tensor.objects import Source
+    from tensor.utils import fork
 
     class ProcessCount(Source):
         implements(ITensorSource)
 
         @defer.inlineCallbacks
         def get(self):
-            out, err, code = yield utils.getProcessOutputAndValue('/bin/ps',
-                args=('-e',))
+            out, err, code = yield fork('/bin/ps', args=('-e',))
 
             count = len(out.strip('\n').split('\n'))
 
@@ -105,6 +105,9 @@ ProcessCount check::
             )
 
 For more information please read the Twisted documentation at https://twistedmatrix.com/trac/wiki/Documentation
+
+The :py:meth:`tensor.utils.fork` method returns a deferred which can timeout
+after a specified time.
 
 Thinking outside the box
 ========================

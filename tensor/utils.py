@@ -54,6 +54,23 @@ class ProcessProtocol(protocol.ProcessProtocol):
         self.timer = reactor.callLater(self.timeout, killIfAlive)
 
 def fork(executable, args=(), env={}, path=None, timeout=3600):
+    """fork
+    Provides a deferred wrapper function with a timeout function
+
+    **Arguments:**
+
+    :executable: Executable
+    :type executable: str.
+
+    **Keyword arguments:**
+
+    :args: Tupple of arguments
+    :type args: tupple.
+    :env: Environment dictionary
+    :type env: dict.
+    :timeout: Kill the child process if timeout is exceeded
+    :type timeout: int.
+    """
     d = defer.Deferred()
     p = ProcessProtocol(d, timeout)
     reactor.spawnProcess(p, executable, (executable,)+tuple(args), env, path)
