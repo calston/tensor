@@ -87,7 +87,7 @@ class Source(object):
     def createEvent(self, state, description, metric, prefix=None):
         """Creates an Event object from the Source configuration"""
         if prefix:
-            service_name = self.service + "_" + prefix
+            service_name = self.service + "." + prefix
         else:
             service_name = self.service
 
