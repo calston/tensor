@@ -54,8 +54,10 @@ class TensorService(service.Service):
         return d
 
     def connectUDPClient(self):
-        self.protocol = riemann.RiemannUDP(self.server, self.port)
-        self.endpoint = reactor.listenUDP(0, self.protocol)
+        def connect(ip):
+            self.protocol = riemann.RiemannUDP(ip, self.port)
+            self.endpoint = reactor.listenUDP(0, self.protocol)
+        return reactor.resolve(self.server).addCallback(connect)
 
     def setupSources(self, config):
         """Sets up source objects from the given config"""
@@ -110,7 +112,7 @@ class TensorService(service.Service):
         if self.proto == 'tcp':
             yield self.connectTCPClient()
         else:
-            self.connectUDPClient()
+            yield self.connectUDPClient()
 
         stagger = 0
         # Start sources internal timers
