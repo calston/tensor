@@ -4,18 +4,11 @@ from tensor.interfaces import ITensorProtocol
 from zope.interface import implements
 
 from twisted.protocols.basic import Int32StringReceiver
+from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import protocol
 from twisted.python import log
 
-
-class RiemannProtocol(Int32StringReceiver):
-    """Riemann protobuf protocol
-    """
-    implements(ITensorProtocol)
-
-    def __init__(self):
-        self.pressure = 0
-
+class RiemannProtobufMixin(object):
     def encodeEvent(self, event):
         """Adapts an Event object to a Riemann protobuf event Event"""
         pbevent = proto_pb2.Event(
@@ -52,6 +45,14 @@ class RiemannProtocol(Int32StringReceiver):
         self.pressure += 1
         self.sendString(self.encodeMessage(events))
 
+class RiemannProtocol(Int32StringReceiver, RiemannProtobufMixin):
+    """Riemann protobuf protocol
+    """
+    implements(ITensorProtocol)
+
+    def __init__(self):
+        self.pressure = 0
+
     def stringReceived(self, string):
         self.pressure -= 1
 
@@ -75,3 +76,16 @@ class RiemannClientFactory(protocol.ReconnectingClientFactory):
         protocol.ReconnectingClientFactory.clientConnectionFailed(
             self, connector, reason)
 
+class RiemannUDP(DatagramProtocol, RiemannProtobufMixin):
+    """UDP datagram protocol for Riemann
+    """
+    implements(ITensorProtocol)
+
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.pressure = 0
+
+    def sendString(self, string):
+        self.transport.write(string, (self.host, self.port))
+        self.pressure -= 1

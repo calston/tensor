@@ -19,6 +19,7 @@ class TensorService(service.Service):
         self.events = []
 
         self.factory = None
+        self.protocol = None
 
         # Read some config stuff
         self.inter = float(config['interval'])  # tick interval
@@ -28,9 +29,11 @@ class TensorService(service.Service):
         self.ttl = float(config.get('ttl', 60.0))
         self.stagger = float(config.get('stagger', 0.2))
 
+        self.proto = config.get('proto', 'tcp')
+
         self.setupSources(config)
 
-    def connectClient(self):
+    def connectTCPClient(self):
         """Deferred which connects to Riemann"""
         self.factory = riemann.RiemannClientFactory()
 
@@ -41,6 +44,7 @@ class TensorService(service.Service):
         def cb():
             # Wait until we have a useful proto object
             if hasattr(self.factory, 'proto') and self.factory.proto:
+                self.protocol = self.factory.proto
                 d.callback(self.factory.proto)
             else:
                 reactor.callLater(0.01, cb)
@@ -49,6 +53,11 @@ class TensorService(service.Service):
 
         return d
 
+    def connectUDPClient(self):
+        def connect(ip):
+            self.protocol = riemann.RiemannUDP(ip, self.port)
+            self.endpoint = reactor.listenUDP(0, self.protocol)
+        return reactor.resolve(self.server).addCallback(connect)
 
     def setupSources(self, config):
         """Sets up source objects from the given config"""
@@ -85,10 +94,10 @@ class TensorService(service.Service):
             events = self.events
             self.events = []
             
-            self.factory.proto.sendEvents(events)
+            self.protocol.sendEvents(events)
 
     def tick(self):
-        if self.factory.proto:
+        if self.protocol:
             # Check backpressure
             if (self.pressure < 0) or (self.proto.pressure <= self.pressure):
                 self.emptyEventQueue()
@@ -100,7 +109,10 @@ class TensorService(service.Service):
 
     @defer.inlineCallbacks
     def startService(self):
-        yield self.connectClient()
+        if self.proto == 'tcp':
+            yield self.connectTCPClient()
+        else:
+            yield self.connectUDPClient()
 
         stagger = 0
         # Start sources internal timers
@@ -117,6 +129,9 @@ class TensorService(service.Service):
         self.running = 0
         self.t.stop()
 
-        if self.factory.proto:
-            self.factory.stopTrying()
-            self.factory.proto.transport.loseConnection()
+        if self.protocol:
+            if self.factory:
+                self.factory.stopTrying()
+                self.protocol.transport.loseConnection()
+            else:
+                self.endpoint.stopListening()

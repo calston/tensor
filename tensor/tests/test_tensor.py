@@ -10,6 +10,13 @@ from tensor.objects import Event
 from tensor.utils import fork
 
 class Tests(unittest.TestCase):
+    def setUp(self):
+        self.endpoint = None
+
+    def tearDown(self):
+        if self.endpoint:
+            return defer.maybeDeferred(self.endpoint.stopListening)
+
     def test_riemann_protobuf(self):
         proto = riemann.RiemannProtocol()
 
@@ -19,7 +26,7 @@ class Tests(unittest.TestCase):
         message = proto.encodeMessage([event])
 
     @defer.inlineCallbacks
-    def test_riemann(self):
+    def test_tcp_riemann(self):
 
         event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0)
 
@@ -30,6 +37,16 @@ class Tests(unittest.TestCase):
         yield p.sendEvents([event])
 
         p.transport.loseConnection()
+
+    @defer.inlineCallbacks
+    def test_udp_riemann(self):
+
+        event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0)
+        
+        protocol = riemann.RiemannUDP('127.0.0.1', 5555)
+        self.endpoint = reactor.listenUDP(0, protocol)
+
+        yield protocol.sendEvents([event])
 
     @defer.inlineCallbacks
     def test_utils_fork(self):

@@ -1,8 +1,11 @@
 # A YAML (sorry) config file for Tensor 
 
 # Server details (default: localhost, 5555)
-server: localhost
+server: 127.0.0.1
 port: 5555
+
+# Use 'tcp' or 'udp' for Riemann. UDP is recommended in almost every case
+proto: udp
 
 # Max unacked events (default: -1)
 # You can set an acceptable amount of backpressure here, this is calculated
