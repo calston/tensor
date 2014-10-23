@@ -62,8 +62,8 @@ Extending the above example to create a simple flip-flop metric event::
     class HelloWorld(Source):
         implements(ITensorSource)
 
-        def __init__(self, config, qb):
-            Source.__init__(self, config, qb)
+        def __init__(self, *a):
+            Source.__init__(self, *a)
             self.bit = False
 
         def get(self):

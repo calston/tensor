@@ -37,8 +37,8 @@ class CPU(Source):
     """
     implements(ITensorSource)
 
-    def __init__(self, config, qb):
-        Source.__init__(self, config, qb)
+    def __init__(self, *a):
+        Source.__init__(self, *a)
 
         self.cpu = None
 

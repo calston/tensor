@@ -1,8 +1,12 @@
 import time
+import os
 import importlib
+
+import yaml
 
 from twisted.application import service
 from twisted.internet import task, reactor, defer
+from twisted.python import log
 
 from tensor.protocol import riemann
 
@@ -21,17 +25,53 @@ class TensorService(service.Service):
         self.factory = None
         self.protocol = None
 
+        self.config = config
+
+        both = lambda i1, i2, t: isinstance(i1, t) and isinstance(i2, t)
+
+        if 'include_path' in config:
+            ipath = config['include_path']
+            if os.path.exists(ipath):
+                files = [
+                    os.path.join(ipath, f) for f in os.listdir(ipath)
+                        if f[-4:] == '.yml'
+                ]
+
+                for f in files:
+                    conf = yaml.load(open(f, 'rt'))
+                    for k,v in conf.items():
+                        if k in self.config:
+                            if both(v, self.config[k], dict):
+                                # Merge dicts
+                                for k2, v2 in v.items():
+                                    self.config[k][j2] = v2
+
+                            elif both(v, self.config[k], list):
+                                # Extend lists
+                                self.config[k].extend(v)
+                            else:
+                                # Overwrite
+                                self.config[k] = v
+                        else:
+                            self.config[k] = v
+                    log.msg('Loadded additional configuration from %s' % f)
+            else:
+                log.msg('Config Error: include_path %s does not exist' % ipath)
+
+        print self.config
+
         # Read some config stuff
-        self.inter = float(config['interval'])  # tick interval
-        self.server = config.get('server', 'localhost')
-        self.port = int(config.get('port', 5555))
-        self.pressure = int(config.get('pressure', -1))
-        self.ttl = float(config.get('ttl', 60.0))
-        self.stagger = float(config.get('stagger', 0.2))
+        self.inter = float(self.config['interval'])  # tick interval
+        self.server = self.config.get('server', 'localhost')
+        self.port = int(self.config.get('port', 5555))
+        self.pressure = int(self.config.get('pressure', -1))
+        self.ttl = float(self.config.get('ttl', 60.0))
+        self.stagger = float(self.config.get('stagger', 0.2))
 
-        self.proto = config.get('proto', 'tcp')
 
-        self.setupSources(config)
+        self.proto = self.config.get('proto', 'tcp')
+
+        self.setupSources(self.config)
 
     def connectTCPClient(self):
         """Deferred which connects to Riemann"""
@@ -77,7 +117,7 @@ class TensorService(service.Service):
             if not ('interval' in source.keys()):
                 source['interval'] = self.inter
 
-            self.sources.append(sourceObj(source, self.queueBack))
+            self.sources.append(sourceObj(source, self.queueBack, self))
 
     def queueBack(self, event):
         """Callback that all event sources call when they have a new event

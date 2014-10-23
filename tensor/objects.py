@@ -49,7 +49,7 @@ class Source(object):
     :queueBack: A callback method to recieve a list of Event objects
     """
 
-    def __init__(self, config, queueBack):
+    def __init__(self, config, queueBack, tensor):
         """Consturct a Source object
 
         Arguments:
@@ -66,6 +66,8 @@ class Source(object):
 
         self.hostname = config.get('hostname',
             socket.gethostbyaddr(socket.gethostname())[0])
+
+        self.tensor = tensor
 
         self.queueBack = queueBack
 
