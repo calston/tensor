@@ -22,6 +22,9 @@ class TensorService(service.Service):
         self.sources = []
         self.events = []
 
+        self.eventCounter = 0
+        self.queueCounter = 0
+
         self.factory = None
         self.protocol = None
 
@@ -126,15 +129,18 @@ class TensorService(service.Service):
 
         if isinstance(event, list):
             self.events.extend(event)
+            self.queueCounter += len(event)
         else:
             self.events.append(event)
+            self.queueCounter += 1
 
     def emptyEventQueue(self):
         if self.events:
             events = self.events
             self.events = []
-            
             self.protocol.sendEvents(events)
+
+            self.eventCounter += len(events)
 
     def tick(self):
         if self.protocol:
