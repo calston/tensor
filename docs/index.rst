@@ -16,6 +16,7 @@ Contents:
 
     start
     sources
+    outputs
     examples
 
 
