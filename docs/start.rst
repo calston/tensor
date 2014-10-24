@@ -43,8 +43,21 @@ they collect metrics from the system. All `interval` attributes are floating
 point in seconds, this means you can check (and send to Riemann) at rates
 well below 1 second.
 
+You can configure multiple outputs which receive a copy of every message
+for example ::
+
+    outputs:
+        - output: tensor.outputs.riemann.RiemannUDP
+          server: localhost
+          port: 5555
+
+If you enable multiple outputs then the `server`, `port` and `proto` options
+will go un-used and the default Riemann TCP transport won't start.
+
+You can configure as many outputs as you like, or create your own.
+
 To configure the basic CPU usage source add it to the `sources` list in the
-config file::
+config file ::
 
     sources:
         - service: cpu

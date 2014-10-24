@@ -1,18 +1,10 @@
 # A YAML (sorry) config file for Tensor 
 
-# Server details (default: localhost, 5555)
-server: 127.0.0.1
-port: 5555
-
-# Use 'tcp' or 'udp' for Riemann. UDP is recommended in almost every case
-proto: udp
-
-# Max unacked events (default: -1)
-# You can set an acceptable amount of backpressure here, this is calculated
-# by the number outstanding acknowledgements when the event queue is rolled up
-# -1 means you don't care, 0 makes everything synchronous - but Tensor will 
-# leak memory if it has to queue for a long time.
-pressure: -1
+# Output details
+outputs:
+    - output: tensor.outputs.riemann.RiemannUDP
+      server: 127.0.0.1
+      port: 5555
 
 # Default TTL for events (default: 60 seconds)
 # It should be noted if Tensor loses its connection to Riemann it will purge

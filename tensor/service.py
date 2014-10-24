@@ -21,9 +21,11 @@ class TensorService(service.Service):
         self.running = 0
         self.sources = []
         self.events = []
+        self.outputs = []
 
         self.eventCounter = 0
         self.queueCounter = 0
+        self.queueExpire = 0
 
         self.factory = None
         self.protocol = None
@@ -61,8 +63,6 @@ class TensorService(service.Service):
             else:
                 log.msg('Config Error: include_path %s does not exist' % ipath)
 
-        print self.config
-
         # Read some config stuff
         self.inter = float(self.config['interval'])  # tick interval
         self.server = self.config.get('server', 'localhost')
@@ -76,31 +76,36 @@ class TensorService(service.Service):
 
         self.setupSources(self.config)
 
-    def connectTCPClient(self):
-        """Deferred which connects to Riemann"""
-        self.factory = riemann.RiemannClientFactory()
+    def setupOutputs(self, config):
+        """Setup output processors"""
 
-        reactor.connectTCP(self.server, self.port, self.factory)
+        if self.proto == 'tcp':
+            defaultOutput = {
+                'output': 'tensor.outputs.riemann.RiemannTCP',
+                'server': self.server,
+                'port': self.port
+            }
+        else:
+            defaultOutput = {
+                'output': 'tensor.outputs.riemann.RiemannUDP',
+                'server': self.server,
+                'port': self.port
+            }
 
-        d = defer.Deferred()
+        outputs = config.get('outputs', [defaultOutput])
 
-        def cb():
-            # Wait until we have a useful proto object
-            if hasattr(self.factory, 'proto') and self.factory.proto:
-                self.protocol = self.factory.proto
-                d.callback(self.factory.proto)
-            else:
-                reactor.callLater(0.01, cb)
+        for output in outputs:
+            cl = output['output'].split('.')[-1]                # class
+            path = '.'.join(output['output'].split('.')[:-1])   # import path
 
-        cb()
+            # Import the module and get the object output we care about
+            outputObj = getattr(importlib.import_module(path), cl)
 
-        return d
+            self.outputs.append(outputObj(output, self))
 
-    def connectUDPClient(self):
-        def connect(ip):
-            self.protocol = riemann.RiemannUDP(ip, self.port)
-            self.endpoint = reactor.listenUDP(0, self.protocol)
-        return reactor.resolve(self.server).addCallback(connect)
+        for output in self.outputs:
+            # connect the output
+            reactor.callLater(0, output.createClient)
 
     def setupSources(self, config):
         """Sets up source objects from the given config"""
@@ -137,28 +142,24 @@ class TensorService(service.Service):
     def emptyEventQueue(self):
         if self.events:
             events = self.events
-            self.events = []
-            self.protocol.sendEvents(events)
-
             self.eventCounter += len(events)
+            self.events = []
+
+            for output in self.outputs:
+                reactor.callLater(0, output.eventsReceived, events)
 
     def tick(self):
-        if self.protocol:
-            # Check backpressure
-            if (self.pressure < 0) or (self.proto.pressure <= self.pressure):
-                self.emptyEventQueue()
-        else:
-            # Check queue age and expire stale events
-            for i, e in enumerate(self.events):
-                if e.time < (time.time() - e.ttl):
-                    self.events.pop(i)
+        # Check queue age and expire stale events
+        for i, e in enumerate(self.events):
+            if e.time < (time.time() - e.ttl):
+                self.events.pop(i)
+                self.queueExpire += 1
+
+        self.emptyEventQueue()
 
     @defer.inlineCallbacks
     def startService(self):
-        if self.proto == 'tcp':
-            yield self.connectTCPClient()
-        else:
-            yield self.connectUDPClient()
+        yield self.setupOutputs(self.config)
 
         stagger = 0
         # Start sources internal timers

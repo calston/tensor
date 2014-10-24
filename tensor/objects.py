@@ -36,6 +36,41 @@ class Event(object):
         else:
             self.hostname = socket.gethostbyaddr(socket.gethostname())[0]
 
+class Output(object):
+    """Output parent class
+
+    Outputs can inherit this object which provides a construct
+    for a working output
+
+    **Arguments:**
+
+    :config: Dictionary config for this queue (usually read from the
+             yaml configuration)
+    :tensor: A TensorService object for interacting with the queue manager
+    """
+    def __init__(self, config, tensor):
+        """Consturct a Output object
+
+        Arguments:
+        config -- Dictionary config for this output
+        tensor -- A TensorService object for interacting with the queue manager
+        """
+        self.config = config
+        self.tensor = tensor
+
+    def createClient(self):
+        """Deferred which sets up the output
+        """
+        pass
+
+    def eventsReceived(self):
+        """Receives a list of events and processes them
+
+        Arguments:
+        events -- list of `tensor.objects.Event`
+        """
+        pass
+
 class Source(object):
     """Source parent class
 
@@ -47,6 +82,7 @@ class Source(object):
     :config: Dictionary config for this queue (usually read from the
              yaml configuration)
     :queueBack: A callback method to recieve a list of Event objects
+    :tensor: A TensorService object for interacting with the queue manager
     """
 
     def __init__(self, config, queueBack, tensor):
@@ -56,6 +92,7 @@ class Source(object):
         config -- Dictionary config for this source
         queueBack -- Callback method for events originating from this source
                      called on config['interval']
+        tensor -- A TensorService object for interacting with the queue manager
         """
         self.config = config
         self.t = task.LoopingCall(self.tick)

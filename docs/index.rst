@@ -6,7 +6,8 @@
 Welcome to Tensor's documentation!
 ==================================
 
-Tensor is a modular monitoring agent for Riemann, using the Twisted framework.
+Tensor is a modular gateway and event router for Riemann, built using the
+Twisted framework.
 
 Contents:
 
@@ -26,6 +27,7 @@ API Documentation:
     api/tensor.rst
     api/protocol.rst
     api/sources.rst
+    api/outputs.rst
 
 Indices and tables
 ==================
