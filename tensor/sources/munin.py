@@ -92,7 +92,6 @@ class MuninNode(Source):
 
         listout = yield proto.sendCommand('list')
         plug_list = listout.split()
-        print "Munin plugins", plug_list
         events = []
         
         for plug in plug_list:
