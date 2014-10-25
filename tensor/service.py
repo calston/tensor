@@ -151,7 +151,7 @@ class TensorService(service.Service):
     def tick(self):
         # Check queue age and expire stale events
         for i, e in enumerate(self.events):
-            if e.time < (time.time() - e.ttl):
+            if (time.time() - e.time) > e.ttl):
                 self.events.pop(i)
                 self.queueExpire += 1
 

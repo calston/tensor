@@ -25,6 +25,7 @@ class Tensor(Source):
 
         self.events = self.tensor.eventCounter
         self.queues = self.tensor.queueCounter
+        self.qexpire = self.tensor.queueExpire
 
         self.rtime = time.time()
 
@@ -38,9 +39,11 @@ class Tensor(Source):
 
         qrate = (self.tensor.queueCounter - self.queues)/t_delta
         erate = (self.tensor.eventCounter - self.events)/t_delta
+        expire_rate = (self.tensor.queueExpire - self.qexpire)/t_delta
 
         self.queues = self.tensor.queueCounter
         self.events = self.tensor.eventCounter
+        self.qexpire = self.tensor.queueExpire
 
         self.rtime = time.time()
         
