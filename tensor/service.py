@@ -60,13 +60,12 @@ class TensorService(service.Service):
                 log.msg('Config Error: include_path %s does not exist' % ipath)
 
         # Read some config stuff
-        self.server = self.config.get('server', 'localhost')
-        self.port = int(self.config.get('port', 5555))
-        self.pressure = int(self.config.get('pressure', -1))
         self.ttl = float(self.config.get('ttl', 60.0))
         self.stagger = float(self.config.get('stagger', 0.2))
 
-
+        # Backward compatibility
+        self.server = self.config.get('server', 'localhost')
+        self.port = int(self.config.get('port', 5555))
         self.proto = self.config.get('proto', 'tcp')
 
         self.setupSources(self.config)

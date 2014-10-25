@@ -12,6 +12,15 @@ class RiemannTCP(Output):
 
         self.inter = float(self.config.get('interval', 1.0))  # tick interval
         self.pressure = int(self.config.get('pressure', -1))
+
+        maxrate = int(self.config.get('maxrate', None))
+        if maxrate:
+            self.queueDepth = int(maxrate * self.inter)
+        else:
+            self.queueDepth = None
+
+        print self.queueDepth
+
         self.protocol = None
 
     def createClient(self):
@@ -40,6 +49,8 @@ class RiemannTCP(Output):
         return d
 
     def tick(self):
+        """Clock tick called every self.inter
+        """
         if self.protocol:
             # Check backpressure
             if (self.pressure < 0) or (self.protocol.pressure <= self.pressure):
@@ -51,10 +62,16 @@ class RiemannTCP(Output):
                     self.events.pop(i)
 
     def emptyQueue(self):
+        """Remove all or self.queueDepth events from the queue
+        """
         if self.events:
-            events = self.events
-            self.tensor.eventCounter += len(events)
-            self.events = []
+            if self.queueDepth:
+                # Remove maximum of self.queueDepth items from queue
+                events = self.events[:self.queueDepth]
+                self.events = self.events[self.queueDepth:]
+            else:
+                events = self.events
+                self.events = []
 
             self.protocol.sendEvents(events)
 
