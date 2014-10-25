@@ -71,6 +71,11 @@ class Output(object):
         """
         pass
 
+    def stop(self):
+        """Called when the service shuts down
+        """
+        pass
+
 class Source(object):
     """Source parent class
 

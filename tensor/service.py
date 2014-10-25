@@ -17,15 +17,11 @@ class TensorService(service.Service):
     Runs timers, configures sources and and manages the queue
     """
     def __init__(self, config):
-        self.t = task.LoopingCall(self.tick)
         self.running = 0
         self.sources = []
-        self.events = []
         self.outputs = []
 
         self.eventCounter = 0
-        self.queueCounter = 0
-        self.queueExpire = 0
 
         self.factory = None
         self.protocol = None
@@ -64,7 +60,6 @@ class TensorService(service.Service):
                 log.msg('Config Error: include_path %s does not exist' % ipath)
 
         # Read some config stuff
-        self.inter = float(self.config['interval'])  # tick interval
         self.server = self.config.get('server', 'localhost')
         self.port = int(self.config.get('port', 5555))
         self.pressure = int(self.config.get('pressure', -1))
@@ -133,23 +128,13 @@ class TensorService(service.Service):
         """
 
         if isinstance(event, list):
-            self.events.extend(event)
-            self.queueCounter += len(event)
+            self.eventCounter += len(event)
         else:
-            self.events.append(event)
-            self.queueCounter += 1
+            self.eventCounter += 1
+            event = [event]
 
-    def emptyEventQueue(self):
-        if self.events:
-            events = self.events
-            self.eventCounter += len(events)
-            self.events = []
-
-            for output in self.outputs:
-                reactor.callLater(0, output.eventsReceived, events)
-
-    def tick(self):
-        self.emptyEventQueue()
+        for output in self.outputs:
+            reactor.callLater(0, output.eventsReceived, event)
 
     @defer.inlineCallbacks
     def startService(self):
@@ -164,15 +149,10 @@ class TensorService(service.Service):
             stagger += self.stagger
 
         self.running = 1
-        self.t.start(self.inter)
  
+    @defer.inlineCallbacks
     def stopService(self):
         self.running = 0
-        self.t.stop()
 
-        if self.protocol:
-            if self.factory:
-                self.factory.stopTrying()
-                self.protocol.transport.loseConnection()
-            else:
-                self.endpoint.stopListening()
+        for output in self.outputs:
+            yield defer.maybeDeferred(output.stop)

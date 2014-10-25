@@ -24,37 +24,22 @@ class Tensor(Source):
         Source.__init__(self, *a)
 
         self.events = self.tensor.eventCounter
-        self.queues = self.tensor.queueCounter
-        self.qexpire = self.tensor.queueExpire
-
         self.rtime = time.time()
 
     def get(self):
         events = []
 
         sources = len(self.tensor.sources)
-        events = len(self.tensor.events)
 
         t_delta = time.time() - self.rtime
 
-        qrate = (self.tensor.queueCounter - self.queues)/t_delta
         erate = (self.tensor.eventCounter - self.events)/t_delta
-        expire_rate = (self.tensor.queueExpire - self.qexpire)/t_delta
 
-        self.queues = self.tensor.queueCounter
         self.events = self.tensor.eventCounter
-        self.qexpire = self.tensor.queueExpire
 
         self.rtime = time.time()
         
         return [
-            self.createEvent('ok', 'De-queue rate', qrate,
-                prefix="dequeue rate"),
-            self.createEvent('ok', 'Event queue rate', erate,
-                prefix="event qrate"),
-            self.createEvent('ok', 'Event queue size', events,
-                prefix="event qsize"),
-            self.createEvent('ok', 'Event expire rate', expire_rate,
-                prefix="event expire rate"),
+            self.createEvent('ok', 'Event rate', erate, prefix="event rate"),
             self.createEvent('ok', 'Sources', sources, prefix="sources"),
         ]
