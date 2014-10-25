@@ -149,12 +149,6 @@ class TensorService(service.Service):
                 reactor.callLater(0, output.eventsReceived, events)
 
     def tick(self):
-        # Check queue age and expire stale events
-        for i, e in enumerate(self.events):
-            if (time.time() - e.time) > e.ttl):
-                self.events.pop(i)
-                self.queueExpire += 1
-
         self.emptyEventQueue()
 
     @defer.inlineCallbacks

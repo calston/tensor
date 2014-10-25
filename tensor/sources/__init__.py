@@ -54,5 +54,7 @@ class Tensor(Source):
                 prefix="event qrate"),
             self.createEvent('ok', 'Event queue size', events,
                 prefix="event qsize"),
+            self.createEvent('ok', 'Event expire rate', expire_rate,
+                prefix="event expire rate"),
             self.createEvent('ok', 'Sources', sources, prefix="sources"),
         ]
