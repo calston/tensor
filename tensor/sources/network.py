@@ -28,7 +28,9 @@ class HTTP(Source):
     :type method: str.
     :match: A text string to match in the document when it is correct
     :type match: str.
-    
+    :useragent: User-Agent header to use
+    :type useragent: str.
+
     **Metrics:**
 
     :(service name).latency: Time to complete request
@@ -43,7 +45,7 @@ class HTTP(Source):
         method = self.config.get('method', 'GET')
         url = self.config.get('url', 'http://%s/' % self.hostname)
         match = self.config.get('match', None)
-        ua = self.config.get('user-agent', 'Tensor HTTP checker')
+        ua = self.config.get('useragent', 'Tensor HTTP checker')
 
         t0 = time.time()
 
