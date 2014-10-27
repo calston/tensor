@@ -85,6 +85,10 @@ class RiemannTCP(Output):
         self.events.extend(events)
 
 class RiemannUDP(Output):
+    def __init__(self, *a):
+        Output.__init__(self, *a)
+        self.protocol = None
+
     def createClient(self):
         """Create a UDP connection to Riemann"""
         server = self.config.get('server', '127.0.0.1')
@@ -104,6 +108,6 @@ class RiemannUDP(Output):
         Arguments:
         events -- list of `tensor.objects.Event`
         """
-
-        self.protocol.sendEvents(events)
+        if self.protocol:
+            self.protocol.sendEvents(events)
 

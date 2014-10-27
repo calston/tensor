@@ -119,9 +119,9 @@ class TensorService(service.Service):
             if not ('interval' in source.keys()):
                 source['interval'] = self.inter
 
-            self.sources.append(sourceObj(source, self.queueBack, self))
+            self.sources.append(sourceObj(source, self.sendEvent, self))
 
-    def queueBack(self, event):
+    def sendEvent(self, event):
         """Callback that all event sources call when they have a new event
         or list of events
         """
