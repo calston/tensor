@@ -13,13 +13,12 @@ class RiemannTCP(Output):
         self.inter = float(self.config.get('interval', 1.0))  # tick interval
         self.pressure = int(self.config.get('pressure', -1))
 
-        maxrate = int(self.config.get('maxrate', None))
-        if maxrate:
+        maxrate = int(self.config.get('maxrate', 0))
+
+        if maxrate > 0:
             self.queueDepth = int(maxrate * self.inter)
         else:
             self.queueDepth = None
-
-        print self.queueDepth
 
         self.protocol = None
 
