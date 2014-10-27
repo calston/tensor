@@ -43,11 +43,12 @@ class HTTP(Source):
         method = self.config.get('method', 'GET')
         url = self.config.get('url', 'http://%s/' % self.hostname)
         match = self.config.get('match', None)
+        ua = self.config.get('user-agent', 'Tensor HTTP checker')
 
         t0 = time.time()
 
         request = yield agent.request(method, url,
-            Headers({'User-Agent': ['Tensor HTTP checker']}),
+            Headers({'User-Agent': [ua]}),
         )
 
         if request.length:
