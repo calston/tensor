@@ -62,7 +62,7 @@ class RiemannClientFactory(protocol.ReconnectingClientFactory):
     maxDelay = 30
     initialDelay = 5
     factor = 2
-    jitter = 50 
+    jitter = 0
 
     def buildProtocol(self, addr):
         self.resetDelay()
