@@ -59,6 +59,11 @@ class RiemannProtocol(Int32StringReceiver, RiemannProtobufMixin):
 class RiemannClientFactory(protocol.ReconnectingClientFactory):
     """A reconnecting client factory which creates RiemannProtocol instances
     """
+    maxDelay = 30
+    initialDelay = 5
+    factor = 2
+    jitter = 50 
+
     def buildProtocol(self, addr):
         self.resetDelay()
         self.proto = RiemannProtocol()
