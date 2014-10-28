@@ -60,6 +60,7 @@ class TensorService(service.Service):
                 log.msg('Config Error: include_path %s does not exist' % ipath)
 
         # Read some config stuff
+        self.debug = float(self.config.get('debug', False))
         self.ttl = float(self.config.get('ttl', 60.0))
         self.stagger = float(self.config.get('stagger', 0.2))
 
@@ -67,6 +68,9 @@ class TensorService(service.Service):
         self.server = self.config.get('server', 'localhost')
         self.port = int(self.config.get('port', 5555))
         self.proto = self.config.get('proto', 'tcp')
+
+        if self.debug:
+            print "config:", repr(config)
 
         self.setupSources(self.config)
 
@@ -89,6 +93,9 @@ class TensorService(service.Service):
         outputs = config.get('outputs', [defaultOutput])
 
         for output in outputs:
+            if not ('debug' in output):
+                output['debug'] = self.debug
+
             cl = output['output'].split('.')[-1]                # class
             path = '.'.join(output['output'].split('.')[:-1])   # import path
 
@@ -113,6 +120,9 @@ class TensorService(service.Service):
             # Import the module and get the object source we care about
             sourceObj = getattr(importlib.import_module(path), cl)
 
+            if not ('debug' in source):
+                source['debug'] = self.debug
+
             if not ('ttl' in source.keys()):
                 source['ttl'] = self.ttl
 
@@ -133,15 +143,21 @@ class TensorService(service.Service):
             event = [event]
 
         for output in self.outputs:
+            if self.debug:
+                log.msg("Sending event %s" % event)
             reactor.callLater(0, output.eventsReceived, event)
 
     @defer.inlineCallbacks
     def startService(self):
         yield self.setupOutputs(self.config)
 
+        if self.debug:
+            log.msg("Starting service")
         stagger = 0
         # Start sources internal timers
         for source in self.sources:
+            if self.debug:
+                log.msg("Starting source " + source.config['service'])
             # Stagger source timers, or use per-source start_delay
             start_delay = float(source.config.get('start_delay', stagger))
             reactor.callLater(start_delay, source.startTimer)

@@ -3,6 +3,7 @@ import socket
 import exceptions
 
 from twisted.internet import task, defer
+from twisted.python import log
 
 class Event(object):
     """Tensor Event object
@@ -124,6 +125,8 @@ class Source(object):
         
         Returns a deferred"""
         event = yield defer.maybeDeferred(self.get)
+        if self.config.get('debug', False):
+            log.msg("[%s] Tick: %s" % (self.config['service'], event))
 
         if event:
             self.queueBack(event)
