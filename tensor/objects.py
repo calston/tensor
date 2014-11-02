@@ -124,12 +124,16 @@ class Source(object):
         and passes that result back to the queueBack method
         
         Returns a deferred"""
-        event = yield defer.maybeDeferred(self.get)
-        if self.config.get('debug', False):
-            log.msg("[%s] Tick: %s" % (self.config['service'], event))
 
-        if event:
-            self.queueBack(event)
+        try:
+            event = yield defer.maybeDeferred(self.get)
+            if self.config.get('debug', False):
+                log.msg("[%s] Tick: %s" % (self.config['service'], event))
+
+            if event:
+                self.queueBack(event)
+        except Exception, e:
+            log.msg("[%s] Unhandled error: %s" % (self.service, e))
 
     def createEvent(self, state, description, metric, prefix=None):
         """Creates an Event object from the Source configuration"""
