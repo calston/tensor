@@ -64,4 +64,3 @@ class Tests(unittest.TestCase):
             died = True
 
         self.assertTrue(died)
-
