@@ -174,12 +174,13 @@ Next create /etc/tensor and a `tensor.yml` file in that directory.
 
 The `tensor.yml` config file should look like this ::
     
-    server: <riemann server>
-    port: 5555
-
-    pressure: -1
     ttl: 60.0
     interval: 1.0
+
+    outputs:
+        - output: tensor.outputs.riemann.RiemannTCP
+          port: 5555
+          server: <riemann server>
 
     # Sources
     sources:
