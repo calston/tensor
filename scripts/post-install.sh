@@ -4,13 +4,16 @@ if [ ! -d /etc/tensor ];
 then
     mkdir -p /etc/tensor
     cat >/etc/tensor/tensor.yml <<EOL
-server: localhost
-port: 5555
-
-pressure: -1
-
+# Default event TTL
 ttl: 60.0
+# De-queue interval
 interval: 1.0
+
+# TCP Output
+outputs:
+    - output: tensor.outputs.riemann.RiemannTCP
+      server: 127.0.0.1
+      port: 5555
 
 # Sources
 sources:
@@ -22,7 +25,7 @@ sources:
       source: tensor.sources.linux.basic.CPU
       interval: 2.0
       critical: {
-        cpu: "> 0.1"
+        cpu: "> 0.8"
       }
 
     - service: memory
