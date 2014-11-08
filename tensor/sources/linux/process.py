@@ -43,7 +43,7 @@ class ProcessStats(Source):
     @defer.inlineCallbacks
     def get(self):
         out, err, code = yield fork('/bin/ps', args=(
-            '-eo','pid,user,etimes,rss,pcpu,comm,cmd'))
+            '-eo','pid,user,etime,rss,pcpu,comm,cmd'))
 
         lines = out.strip('\n').split('\n')
 
@@ -63,14 +63,32 @@ class ProcessStats(Source):
 
             parts = None
 
+            elapsed = proc['ELAPSED']
+            if '-' in elapsed:
+                days = int(elapsed.split('-')[0])
+                hours, minutes, seconds = [
+                    int (i) for i in elapsed.split('-')[1].split(':')]
+                age = (days*24*60*60) + (hours*60*60) + (minutes*60)
+                age += seconds
+
+            elif elapsed.count(':')==2:
+                hours, minutes, seconds = [
+                    int (i) for i in elapsed.split(':')]
+                age = (hours*60*60) + (minutes*60) + seconds
+
+            else:
+                minutes, seconds = [
+                    int (i) for i in elapsed.split(':')]
+                age = (minutes*60) + seconds
+
             # Ignore kernel and tasks that just started, usually it's this ps
-            if (proc['CMD'][0] != '[') and (int(proc['ELAPSED'])>0):
+            if (proc['CMD'][0] != '[') and (age>0):
                 binary = proc['CMD'].split()[0].split('/')[-1].strip(':').strip('-')
                 pid = proc['PID']
                 cmd = proc['CMD']
                 comm = proc['COMMAND']
                 user = proc['USER']
-                age = int(proc['ELAPSED'])
+
                 mem = int(proc['RSS'])/1024.0
                 cpu = float(proc['%CPU'])
 
