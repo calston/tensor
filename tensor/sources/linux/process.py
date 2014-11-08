@@ -98,18 +98,19 @@ class ProcessStats(Source):
 
         for k,v in users.items():
             events.append(self.createEvent('ok', 'User memory %s: %0.2fMB' % (
-                k, v['mem']), v['mem'], prefix=k+".mem"))
+                k, v['mem']), v['mem'], prefix="user.%s.mem" % k))
             events.append(self.createEvent('ok', 'User CPU usage %s: %s%%' % (
-                k, int(v['cpu']*100)), v['cpu'], prefix=k+".cpu"))
+                k, int(v['cpu']*100)), v['cpu'], prefix="user.%s.cpu" % k))
 
         for k,v in procs.items():
             events.append(self.createEvent('ok', 'Process age %s: %ss' % (
-                k, v['age']), v['age'], prefix=k+".age"))
+                k, v['age']), v['age'], prefix="proc.%s.age" % k))
             events.append(self.createEvent('ok', 'Process memory %s: %0.2fMB' % (
-                k, v['mem']), v['mem'], prefix=k+".mem"))
+                k, v['mem']), v['mem'], prefix="proc.%s.mem" % k))
             events.append(
                 self.createEvent('ok', 'Process CPU usage %s: %s%%' % (
-                    k, int(v['cpu']*100)), v['cpu'], prefix=k+".cpu"
+                    k, int(v['cpu']*100)), v['cpu'],
+                    prefix="proc.%s.cpu" % k
                 )
             )
 
