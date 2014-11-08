@@ -31,10 +31,12 @@ class ProcessStats(Source):
     """Returns memory used by each active parent process
 
     **Metrics:**
-    :(service name).(process name).cpu:
-    :(service name).(process name).memory:
-    :(service name).(user name).cpu:
-    :(service name).(user name).memory:
+
+    :(service name).proc.(process name).cpu: Per process CPU usage
+    :(service name).proc.(process name).memory: Per process memory use
+    :(service name).proc.(process name).age: Per process age
+    :(service name).user.(user name).cpu: Per user CPU usage
+    :(service name).user.(user name).memory: Per user memory use
     """
     implements(ITensorSource)
 
