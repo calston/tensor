@@ -38,3 +38,8 @@ class Tests(unittest.TestCase):
 
         r = yield s.get()
 
+    @defer.inlineCallbacks
+    def test_process_stats(self):
+        s = process.ProcessStats({'interval': 1.0, 'service': 'ps', 'ttl': 60}, self._qb, None)
+
+        r = yield s.get()

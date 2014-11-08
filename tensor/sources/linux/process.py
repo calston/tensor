@@ -1,3 +1,5 @@
+import UserDict
+
 from zope.interface import implements
 
 from twisted.internet import defer
@@ -19,8 +21,96 @@ class ProcessCount(Source):
     def get(self):
         out, err, code = yield fork('/bin/ps', args=('-e',))
 
-        count = len(out.strip('\n').split('\n'))
+        count = len(out.strip('\n').split('\n')) - 1
 
         defer.returnValue(
             self.createEvent('ok', 'Process count %s' % (count), count)
         )
+
+class ProcessStats(Source):
+    """Returns memory used by each active parent process
+
+    **Metrics:**
+    :(service name).(process name).cpu:
+    :(service name).(process name).memory:
+    :(service name).(user name).cpu:
+    :(service name).(user name).memory:
+    """
+    implements(ITensorSource)
+
+    @defer.inlineCallbacks
+    def get(self):
+        out, err, code = yield fork('/bin/ps', args=(
+            '-eo','pid,user,etimes,rss,pcpu,comm,cmd'))
+
+        lines = out.strip('\n').split('\n')
+
+        cols = lines[0].split()
+
+        procs = {}
+        users = {}
+
+        vals = []
+
+        for l in lines[1:]:
+            parts = l.split(None, len(cols) - 1)
+
+            proc = {}
+            for i, e in enumerate(parts):
+                proc[cols[i]] = e.strip()
+
+            parts = None
+
+            # Ignore kernel and tasks that just started, usually it's this ps
+            if (proc['CMD'][0] != '[') and (int(proc['ELAPSED'])>0):
+                binary = proc['CMD'].split()[0].split('/')[-1].strip(':').strip('-')
+                pid = proc['PID']
+                cmd = proc['CMD']
+                comm = proc['COMMAND']
+                user = proc['USER']
+                age = int(proc['ELAPSED'])
+                mem = int(proc['RSS'])/1024.0
+                cpu = float(proc['%CPU'])
+
+                if user in users:
+                    users[user]['cpu'] += cpu
+                    users[user]['mem'] += mem
+                else:
+                    users[user] = {
+                        'cpu': cpu, 'mem': mem
+                    }
+
+                if binary != comm:
+                    key = "%s.%s" % (binary,comm)
+                else:
+                    key = comm
+
+                if key in procs:
+                    procs[key]['cpu'] += cpu
+                    procs[key]['mem'] += mem
+                    procs[key]['age'] += age
+                else:
+                    procs[key] = {
+                        'cpu': cpu, 'mem': mem, 'age': age
+                    }
+
+        events = []
+
+        for k,v in users.items():
+            events.append(self.createEvent('ok', 'User memory %s: %0.2fMB' % (
+                k, v['mem']), v['mem'], prefix=k))
+            events.append(self.createEvent('ok', 'User CPU usage %s: %s%%' % (
+                k, int(v['cpu']*100)), v['cpu'], prefix=k))
+
+        for k,v in procs.items():
+            events.append(self.createEvent('ok', 'Process age %s: %ss' % (
+                k, v['age']), v['age'], prefix=k))
+            events.append(self.createEvent('ok', 'Process memory %s: %0.2fMB' % (
+                k, v['mem']), v['mem'], prefix=k))
+            events.append(
+                self.createEvent('ok', 'Process CPU usage %s: %s%%' % (
+                    k, int(v['cpu']*100)), v['cpu'], prefix=k
+                )
+            )
+
+        defer.returnValue(events)
