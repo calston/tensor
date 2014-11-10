@@ -41,8 +41,11 @@ class Queues(Source):
     def get(self):
         vhost = self.config.get('vhost', '/')
 
-        out, err, code = yield fork('rabbitmqctl', args=(
-            'list_queues', '-p', vhost, 'messages_ready', 'messages_unacknowledged'
+        mqctl = self.config.get('rabbitmqctl', '/usr/sbin/rabbitmqctl')
+
+        out, err, code = yield fork(mqctl, args=(
+            'list_queues', '-p', vhost, 'name', 'messages_ready',
+            'messages_unacknowledged'
         ))
 
         t = time.time()
