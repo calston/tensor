@@ -134,6 +134,9 @@ class Source(object):
                 self.queueBack(event)
         except Exception, e:
             log.msg("[%s] Unhandled error: %s" % (self.service, e))
+            self.queueBack(self.createEvent('critical',
+                'Unhandled error in service %s: %s' % (self.service, e), None)
+            )
 
     def createEvent(self, state, description, metric, prefix=None):
         """Creates an Event object from the Source configuration"""
