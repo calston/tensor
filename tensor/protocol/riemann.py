@@ -21,13 +21,14 @@ class RiemannProtobufMixin(object):
             ttl=event.ttl,
         )
 
-        # I have no idea what I'm doing
-        if isinstance(event.metric, int):
-            pbevent.metric_sint64 = event.metric
-            pbevent.metric_f = float(event.metric)
-        else:
-            pbevent.metric_d = float(event.metric)
-            pbevent.metric_f = float(event.metric)
+        if event.metric is not None:
+            # I have no idea what I'm doing
+            if isinstance(event.metric, int):
+                pbevent.metric_sint64 = event.metric
+                pbevent.metric_f = float(event.metric)
+            else:
+                pbevent.metric_d = float(event.metric)
+                pbevent.metric_f = float(event.metric)
 
         return pbevent
 
