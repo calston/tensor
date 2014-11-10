@@ -9,15 +9,20 @@ from tensor.objects import Source
 from tensor.utils import fork
 
 class Queues(Source):
-    """Returns memory used by each active parent process
+    """Returns Queue information for a particular vhost
+
+    **Configuration arguments:**
+
+    :vhost: Vhost name
+    :type vhost: str.
 
     **Metrics:**
 
-    :(service name).proc.(process name).cpu: Per process CPU usage
-    :(service name).proc.(process name).memory: Per process memory use
-    :(service name).proc.(process name).age: Per process age
-    :(service name).user.(user name).cpu: Per user CPU usage
-    :(service name).user.(user name).memory: Per user memory use
+    :(service_name).(queue).ready: Ready messages for queue
+    :(service_name).(queue).unack: Unacknowledged messages for queue
+    :(service_name).(queue).ready_rate: Ready rate of change per second
+    :(service_name).(queue).unack_rate: Unacknowledge rate of change per second
+
     """
     implements(ITensorSource)
 
