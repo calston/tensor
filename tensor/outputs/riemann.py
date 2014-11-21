@@ -20,8 +20,6 @@ class RiemannTCP(Output):
         else:
             self.queueDepth = None
 
-        self.protocol = None
-
     def createClient(self):
         """Create a TCP connection to Riemann with automatic reconnection
         """
@@ -30,14 +28,13 @@ class RiemannTCP(Output):
         server = self.config.get('server', 'localhost')
         port = self.config.get('port', 5555)
 
-        reactor.connectTCP(server, port, self.factory)
+        self.connector = reactor.connectTCP(server, port, self.factory)
 
         d = defer.Deferred()
 
         def cb():
             # Wait until we have a useful proto object
             if hasattr(self.factory, 'proto') and self.factory.proto:
-                self.protocol = self.factory.proto
                 self.t.start(self.inter)
                 d.callback(None)
             else:
@@ -47,12 +44,19 @@ class RiemannTCP(Output):
 
         return d
 
+    def stop(self):
+        """Stop this client.
+        """
+        self.t.stop()
+        self.factory.stopTrying()
+        self.connector.disconnect()
+
     def tick(self):
         """Clock tick called every self.inter
         """
-        if self.protocol:
+        if self.factory.proto:
             # Check backpressure
-            if (self.pressure < 0) or (self.protocol.pressure <= self.pressure):
+            if (self.pressure < 0) or (self.factory.proto.pressure <= self.pressure):
                 self.emptyQueue()
         else:
             # Check queue age and expire stale events
@@ -72,7 +76,7 @@ class RiemannTCP(Output):
                 events = self.events
                 self.events = []
 
-            self.protocol.sendEvents(events)
+            self.factory.proto.sendEvents(events)
 
     def eventsReceived(self, events):
         """Receives a list of events and transmits them to Riemann
