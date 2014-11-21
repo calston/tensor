@@ -7,6 +7,7 @@ from twisted.protocols.basic import Int32StringReceiver
 
 from tensor.ihateprotobuf import proto_pb2
 from tensor.objects import Event
+from tensor.protocol.riemann import RiemannClientFactory
 from tensor.service import TensorService
 
 
@@ -109,5 +110,35 @@ class TestService(unittest.TestCase):
                       hostname='localhost')
         service.sendEvent(event)
         [msg] = yield factory.wait_for_messages(1)
+        [event] = msg.events
+        self.assertEqual(event.description, 'Sky has not fallen')
+
+    @defer.inlineCallbacks
+    def test_service_sends_event_after_reconnect(self):
+        self.patch(RiemannClientFactory, 'initialDelay', 0.1)
+        factory = yield self.start_riemann_server()
+        service = self.make_service({"port": factory.get_host().port})
+        yield service.startService()
+
+        # Send an event to make sure everything's happy
+        [] = yield factory.wait_for_messages(0)
+        event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0,
+                      hostname='localhost')
+        service.sendEvent(event)
+        [msg] = yield factory.wait_for_messages(1)
+        [event] = msg.events
+        self.assertEqual(event.description, 'Sky has not fallen')
+
+        # Disconnect and hope we reconnect
+        [output] = service.outputs
+        yield output.connector.disconnect()
+        yield wait(0.2)
+
+        # Send another event to make sure everything's still happy
+        [_] = yield factory.wait_for_messages(1)
+        event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0,
+                      hostname='localhost')
+        service.sendEvent(event)
+        [_, msg2] = yield factory.wait_for_messages(2)
         [event] = msg.events
         self.assertEqual(event.description, 'Sky has not fallen')
