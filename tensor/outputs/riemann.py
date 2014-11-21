@@ -30,7 +30,7 @@ class RiemannTCP(Output):
         server = self.config.get('server', 'localhost')
         port = self.config.get('port', 5555)
 
-        reactor.connectTCP(server, port, self.factory)
+        self.connector = reactor.connectTCP(server, port, self.factory)
 
         d = defer.Deferred()
 
@@ -46,6 +46,13 @@ class RiemannTCP(Output):
         cb()
 
         return d
+
+    def stop(self):
+        """Stop this client.
+        """
+        self.t.stop()
+        self.factory.stopTrying()
+        self.connector.disconnect()
 
     def tick(self):
         """Clock tick called every self.inter
