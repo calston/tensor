@@ -107,8 +107,9 @@ class Source(object):
         self.inter = float(config['interval'])
         self.ttl = float(config['ttl'])
 
-        self.hostname = config.get('hostname',
-            socket.gethostbyaddr(socket.gethostname())[0])
+        self.hostname = config.get('hostname')
+        if self.hostname is None:
+            self.hostname = socket.gethostbyaddr(socket.gethostname())[0]
 
         self.tensor = tensor
 
