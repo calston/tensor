@@ -15,6 +15,13 @@ tensor.sources.munin
    :members:
    :show-inheritance:
 
+tensor.sources.riak
+===================
+
+.. automodule:: tensor.sources.riak
+   :members:
+   :show-inheritance:
+
 tensor.sources.linux
 ====================
 
