@@ -10,7 +10,7 @@ from tensor.sources import riak
 
 
 class TestLinuxSources(unittest.TestCase):
-    def setUp(self):
+    def skip_if_no_hostname(self):
         try:
             socket.gethostbyaddr(socket.gethostname())
         except socket.herror:
@@ -20,6 +20,7 @@ class TestLinuxSources(unittest.TestCase):
         pass
 
     def test_basic_cpu(self):
+        self.skip_if_no_hostname()
         s = basic.CPU(
             {'interval': 1.0, 'service': 'cpu', 'ttl': 60}, self._qb, None)
 
@@ -29,13 +30,57 @@ class TestLinuxSources(unittest.TestCase):
         except:
             raise unittest.SkipTest('Might not exist in docker')
 
+    def test_basic_cpu_calculation(self):
+        s = basic.CPU({
+            'interval': 1.0,
+            'service': 'cpu',
+            'ttl': 60,
+            'hostname': 'localhost',
+        }, self._qb, None)
+
+        stats = "cpu  2255 34 2290 25563 6290 127 456 0 0 0"
+        s._read_proc_stat = lambda: stats
+        # This is the first time we're getting this stat, so we get no events.
+        self.assertEqual(s.get(), None)
+
+        stats = "cpu  4510 68 4580 51126 12580 254 912 0 0 0"
+        s._read_proc_stat = lambda: stats
+        [cpu_event, iowait_event] = s.get()
+        self.assertEqual(cpu_event.service, 'cpu')
+        self.assertEqual(round(cpu_event.metric, 4), 0.1395)
+        self.assertEqual(iowait_event.service, 'cpu.iowait')
+        self.assertEqual(round(iowait_event.metric, 4), 0.1699)
+
+    def test_basic_cpu_calculation_no_guest_stats(self):
+        s = basic.CPU({
+            'interval': 1.0,
+            'service': 'cpu',
+            'ttl': 60,
+            'hostname': 'localhost',
+        }, self._qb, None)
+
+        stats = "cpu  2255 34 2290 25563 6290 127 456 0"
+        s._read_proc_stat = lambda: stats
+        # This is the first time we're getting this stat, so we get no events.
+        self.assertEqual(s.get(), None)
+
+        stats = "cpu  4510 68 4580 51126 12580 254 912 0"
+        s._read_proc_stat = lambda: stats
+        [cpu_event, iowait_event] = s.get()
+        self.assertEqual(cpu_event.service, 'cpu')
+        self.assertEqual(round(cpu_event.metric, 4), 0.1395)
+        self.assertEqual(iowait_event.service, 'cpu.iowait')
+        self.assertEqual(round(iowait_event.metric, 4), 0.1699)
+
     def test_basic_memory(self):
+        self.skip_if_no_hostname()
         s = basic.Memory(
             {'interval': 1.0, 'service': 'mem', 'ttl': 60}, self._qb, None)
 
         s.get()
 
     def test_basic_load(self):
+        self.skip_if_no_hostname()
         s = basic.LoadAverage(
             {'interval': 1.0, 'service': 'mem', 'ttl': 60}, self._qb, None)
 
@@ -43,6 +88,7 @@ class TestLinuxSources(unittest.TestCase):
 
     @defer.inlineCallbacks
     def test_process_count(self):
+        self.skip_if_no_hostname()
         s = process.ProcessCount(
             {'interval': 1.0, 'service': 'mem', 'ttl': 60}, self._qb, None)
 
@@ -50,6 +96,7 @@ class TestLinuxSources(unittest.TestCase):
 
     @defer.inlineCallbacks
     def test_basic_disk_space(self):
+        self.skip_if_no_hostname()
         s = basic.DiskFree(
             {'interval': 1.0, 'service': 'df', 'ttl': 60}, self._qb, None)
 
@@ -57,6 +104,7 @@ class TestLinuxSources(unittest.TestCase):
 
     @defer.inlineCallbacks
     def test_process_stats(self):
+        self.skip_if_no_hostname()
         s = process.ProcessStats(
             {'interval': 1.0, 'service': 'ps', 'ttl': 60}, self._qb, None)
 
