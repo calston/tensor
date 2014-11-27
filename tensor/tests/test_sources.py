@@ -51,6 +51,27 @@ class TestLinuxSources(unittest.TestCase):
         self.assertEqual(iowait_event.service, 'cpu.iowait')
         self.assertEqual(round(iowait_event.metric, 4), 0.1699)
 
+    def test_basic_cpu_calculation_no_guest_stats(self):
+        s = basic.CPU({
+            'interval': 1.0,
+            'service': 'cpu',
+            'ttl': 60,
+            'hostname': 'localhost',
+        }, self._qb, None)
+
+        stats = "cpu  2255 34 2290 25563 6290 127 456 0"
+        s._read_proc_stat = lambda: stats
+        # This is the first time we're getting this stat, so we get no events.
+        self.assertEqual(s.get(), None)
+
+        stats = "cpu  4510 68 4580 51126 12580 254 912 0"
+        s._read_proc_stat = lambda: stats
+        [cpu_event, iowait_event] = s.get()
+        self.assertEqual(cpu_event.service, 'cpu')
+        self.assertEqual(round(cpu_event.metric, 4), 0.1395)
+        self.assertEqual(iowait_event.service, 'cpu.iowait')
+        self.assertEqual(round(iowait_event.metric, 4), 0.1699)
+
     def test_basic_memory(self):
         self.skip_if_no_hostname()
         s = basic.Memory(
