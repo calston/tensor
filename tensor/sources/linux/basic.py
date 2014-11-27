@@ -65,8 +65,9 @@ class CPU(Source):
         usage, iowait, total = self._calculate_metrics(stat)
 
         if not self.cpu:
-            # No initial values, so set to the current values to return zeros.
+            # No initial values, so set them and return no events.
             self.cpu = (usage, iowait, total)
+            return None
 
         prev_usage, prev_iowait, prev_total = self.cpu
         self.cpu = (usage, iowait, total)

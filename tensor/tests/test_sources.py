@@ -40,12 +40,8 @@ class TestLinuxSources(unittest.TestCase):
 
         stats = "cpu  2255 34 2290 25563 6290 127 456 0 0 0"
         s._read_proc_stat = lambda: stats
-        # This is the first time we're getting this stat, so we return zeros
-        [cpu_event, iowait_event] = s.get()
-        self.assertEqual(cpu_event.service, 'cpu')
-        self.assertEqual(round(cpu_event.metric, 4), 0.0)
-        self.assertEqual(iowait_event.service, 'cpu.iowait')
-        self.assertEqual(round(iowait_event.metric, 4), 0.0)
+        # This is the first time we're getting this stat, so we get no events.
+        self.assertEqual(s.get(), None)
 
         stats = "cpu  4510 68 4580 51126 12580 254 912 0 0 0"
         s._read_proc_stat = lambda: stats
