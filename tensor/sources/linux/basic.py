@@ -6,6 +6,7 @@ from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 from tensor.utils import fork
 
+
 class LoadAverage(Source):
     """Reports system load average for the current host
 
@@ -28,6 +29,7 @@ class DiskIO(Source):
         # I can't think of a useful way to filter /proc/diskstats right now
         return None
 
+
 class CPU(Source):
     """Reports system CPU utilisation as a percentage/100
 
@@ -42,35 +44,49 @@ class CPU(Source):
 
         self.cpu = None
 
-    def get(self):
-        stat = open('/proc/stat', 'rt').readline().strip('\n')
+    def _read_proc_stat(self):
+        with open('/proc/stat', 'rt') as procstat:
+            return procstat.readline().strip('\n')
 
+    def _calculate_metrics(self, stat):
         cpu = [int(i) for i in stat.split()[1:]]
+        # We might not have all the virt-related numbers, so zero-pad.
+        cpu = (cpu + [0, 0, 0])[:10]
 
-        user, nice, system, idle, iowait, irq, \
-            softirq, steal, guest, guest_nice = cpu
- 
-        # I got this off the internet, it's probably wrong
-        idle = idle + iowait
-        total = user + nice + system + irq + softirq + steal + idle
+        (user, nice, system, idle, iowait, irq,
+         softirq, steal, guest, guest_nice) = cpu
+        usage = user + nice + system + irq + softirq + steal
+        total = usage + iowait + idle
+
+        return (usage, iowait, total)
+
+    def get(self):
+        stat = self._read_proc_stat()
+        usage, iowait, total = self._calculate_metrics(stat)
 
         if not self.cpu:
-            # No initial values so just return zero on the first get
-            self.cpu = (idle, total)
-            return self.createEvent('ok', 'CPU %', 0.0)
-        
-        prev_idle, prev_total = self.cpu
-        
+            # No initial values, so set to the current values to return zeros.
+            self.cpu = (usage, iowait, total)
+
+        prev_usage, prev_iowait, prev_total = self.cpu
+        self.cpu = (usage, iowait, total)
         total_diff = total - prev_total
 
         if total_diff != 0:
-            cpu_util = (total_diff - (idle - prev_idle))/float(total_diff)
+            cpu_usage = (usage - prev_usage) / float(total_diff)
+            cpu_iowait = (iowait - prev_iowait) / float(total_diff)
         else:
-            cpu_util = 0.0
+            cpu_usage = 0.0
+            cpu_iowait = 0.0
 
-        self.cpu = (idle, total)
+        return [
+            self.createEvent(
+                'ok', 'CPU %s%%' % int(cpu_usage * 100), cpu_usage),
+            self.createEvent(
+                'ok', 'CPU iowait %s%%' % (cpu_iowait * 100), cpu_iowait,
+                prefix='iowait'),
+        ]
 
-        return self.createEvent('ok', 'CPU %s%%' % int(cpu_util*100), cpu_util)
 
 class Memory(Source):
     """Reports system memory utilisation as a percentage/100
@@ -80,20 +96,21 @@ class Memory(Source):
     :(service name): Percentage memory utilisation
     """
     implements(ITensorSource)
- 
+
     def get(self):
         mem = open('/proc/meminfo')
         dat = {}
         for l in mem:
             k, v = l.replace(':', '').split()[:2]
             dat[k] = int(v)
-        
+
         free = dat['MemFree'] + dat['Buffers'] + dat['Cached']
         total = dat['MemTotal']
         used = total - free
 
-        return self.createEvent('ok', 'Memory %s/%s' % (used, total), 
-                used/float(total))
+        return self.createEvent('ok', 'Memory %s/%s' % (used, total),
+                                used/float(total))
+
 
 class DiskFree(Source):
     """Returns the free space for all mounted filesystems
@@ -106,7 +123,7 @@ class DiskFree(Source):
 
     @defer.inlineCallbacks
     def get(self):
-        out, err, code = yield fork('/bin/df', args=('-lPx','tmpfs',))
+        out, err, code = yield fork('/bin/df', args=('-lPx', 'tmpfs',))
 
         out = [i.split() for i in out.strip('\n').split('\n')[1:]]
 
@@ -117,8 +134,7 @@ class DiskFree(Source):
                 util = int(util.strip('%'))
                 events.append(
                     self.createEvent('ok', 'Disk usage %s' % (util),
-                        util, prefix=disk)
+                                     util, prefix=disk)
                 )
 
         defer.returnValue(events)
-
