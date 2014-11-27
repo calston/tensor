@@ -47,8 +47,12 @@ class CPU(Source):
 
         cpu = [int(i) for i in stat.split()[1:]]
 
-        user, nice, system, idle, iowait, irq, \
-            softirq, steal, guest, guest_nice = cpu
+        if len(cpu) == 10:
+            user, nice, system, idle, iowait, irq, \
+                softirq, steal, guest, guest_nice = cpu
+        elif len(cpu) == 8:
+            user, nice, system, idle, iowait, irq, softirq, steal = cpu
+            guest, guest_nice = (0,0)
  
         # I got this off the internet, it's probably wrong
         idle = idle + iowait
