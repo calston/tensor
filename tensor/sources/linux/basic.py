@@ -85,24 +85,19 @@ class CPU(Source):
 
         if total_diff != 0:
             cpu_usage = (usage - prev_usage) / float(total_diff) 
-        else:
-            cpu_usage = 0.0
-
-        events.append(self.createEvent(
-            'ok', 'CPU %s%%' % int(cpu_usage * 100), cpu_usage))
-
-        for i, name in enumerate(self.cols):
-            prev = self.cpu[i]
-            if total_diff != 0:
-                cpu_m = (stats[i] - prev) / float(total_diff)
-            else:
-                cpu_m = 0.0
 
             events.append(self.createEvent(
-                'ok', 'CPU %s %s%%' % (name, int(cpu_m * 100)), cpu_m,
-                prefix=name))
+                'ok', 'CPU %s%%' % int(cpu_usage * 100), cpu_usage))
 
-        self.cpu = stats
+            for i, name in enumerate(self.cols):
+                prev = self.cpu[i]
+                cpu_m = (stats[i] - prev) / float(total_diff)
+
+                events.append(self.createEvent(
+                    'ok', 'CPU %s %s%%' % (name, int(cpu_m * 100)), cpu_m,
+                    prefix=name))
+
+            self.cpu = stats
 
         return events
 
