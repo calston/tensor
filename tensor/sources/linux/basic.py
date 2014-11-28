@@ -36,6 +36,7 @@ class CPU(Source):
     **Metrics:**
 
     :(service name): Percentage CPU utilisation
+    :(service name).(type): Percentage CPU utilisation by type
     """
     implements(ITensorSource)
 
