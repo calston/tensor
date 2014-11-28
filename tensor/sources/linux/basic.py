@@ -36,8 +36,12 @@ class CPU(Source):
     **Metrics:**
 
     :(service name): Percentage CPU utilisation
+    :(service name).(type): Percentage CPU utilisation by type
     """
     implements(ITensorSource)
+
+    cols = ['user', 'nice', 'system', 'idle', 'iowait', 'irq',
+        'softirq', 'steal', 'guest', 'guest_nice']
 
     def __init__(self, *a):
         Source.__init__(self, *a)
@@ -55,38 +59,50 @@ class CPU(Source):
 
         (user, nice, system, idle, iowait, irq,
          softirq, steal, guest, guest_nice) = cpu
+
         usage = user + nice + system + irq + softirq + steal
         total = usage + iowait + idle
 
-        return (usage, iowait, total)
+        if not self.cpu:
+            # No initial values, so set them and return no events.
+            self.cpu = cpu
+            self.prev_total = total
+            self.prev_usage = usage
+            return None
+
+        total_diff = total - self.prev_total
+
+        if total_diff != 0:
+            metrics = [(None, (usage - self.prev_usage) / float(total_diff))]
+
+            for i, name in enumerate(self.cols):
+                prev = self.cpu[i]
+                cpu_m = (cpu[i] - prev) / float(total_diff)
+
+                metrics.append((name, cpu_m))
+
+            self.cpu = cpu
+            self.prev_total = total
+            self.prev_usage = usage
+
+            return metrics
+
+        return None
 
     def get(self):
         stat = self._read_proc_stat()
-        usage, iowait, total = self._calculate_metrics(stat)
+        stats = self._calculate_metrics(stat)
+        
+        if stats:
+            events = [
+                self.createEvent('ok', 'CPU %s %s%%' % (name, int(cpu_m * 100)), cpu_m, prefix=name)
+                for name, cpu_m in stats[1:]
+            ]
 
-        if not self.cpu:
-            # No initial values, so set them and return no events.
-            self.cpu = (usage, iowait, total)
-            return None
+            events.append(self.createEvent(
+                'ok', 'CPU %s%%' % int(stats[0][1] * 100), stats[0][1]))
 
-        prev_usage, prev_iowait, prev_total = self.cpu
-        self.cpu = (usage, iowait, total)
-        total_diff = total - prev_total
-
-        if total_diff != 0:
-            cpu_usage = (usage - prev_usage) / float(total_diff)
-            cpu_iowait = (iowait - prev_iowait) / float(total_diff)
-        else:
-            cpu_usage = 0.0
-            cpu_iowait = 0.0
-
-        return [
-            self.createEvent(
-                'ok', 'CPU %s%%' % int(cpu_usage * 100), cpu_usage),
-            self.createEvent(
-                'ok', 'CPU iowait %s%%' % (cpu_iowait * 100), cpu_iowait,
-                prefix='iowait'),
-        ]
+            return events
 
 
 class Memory(Source):
