@@ -39,6 +39,9 @@ class CPU(Source):
     """
     implements(ITensorSource)
 
+    cols = ['user', 'nice', 'system', 'idle', 'iowait', 'irq',
+        'softirq', 'steal', 'guest', 'guest_nice']
+
     def __init__(self, *a):
         Source.__init__(self, *a)
 
@@ -53,40 +56,54 @@ class CPU(Source):
         # We might not have all the virt-related numbers, so zero-pad.
         cpu = (cpu + [0, 0, 0])[:10]
 
+
         (user, nice, system, idle, iowait, irq,
          softirq, steal, guest, guest_nice) = cpu
+
         usage = user + nice + system + irq + softirq + steal
         total = usage + iowait + idle
 
-        return (usage, iowait, total)
+        return cpu + [usage, total]
 
     def get(self):
         stat = self._read_proc_stat()
-        usage, iowait, total = self._calculate_metrics(stat)
+        stats = self._calculate_metrics(stat)
+
+        usage, total = stats[-2:]
 
         if not self.cpu:
             # No initial values, so set them and return no events.
-            self.cpu = (usage, iowait, total)
+            self.cpu = stats
             return None
 
-        prev_usage, prev_iowait, prev_total = self.cpu
-        self.cpu = (usage, iowait, total)
+        prev_usage, prev_total = self.cpu[-2:]
+        prev_set = self.cpu[:10]
         total_diff = total - prev_total
 
+        events = []
+
         if total_diff != 0:
-            cpu_usage = (usage - prev_usage) / float(total_diff)
-            cpu_iowait = (iowait - prev_iowait) / float(total_diff)
+            cpu_usage = (usage - prev_usage) / float(total_diff) 
         else:
             cpu_usage = 0.0
-            cpu_iowait = 0.0
 
-        return [
-            self.createEvent(
-                'ok', 'CPU %s%%' % int(cpu_usage * 100), cpu_usage),
-            self.createEvent(
-                'ok', 'CPU iowait %s%%' % (cpu_iowait * 100), cpu_iowait,
-                prefix='iowait'),
-        ]
+        events.append(self.createEvent(
+            'ok', 'CPU %s%%' % int(cpu_usage * 100), cpu_usage))
+
+        for i, name in enumerate(self.cols):
+            prev = self.cpu[i]
+            if total_diff != 0:
+                cpu_m = (stats[i] - prev) / float(total_diff)
+            else:
+                cpu_m = 0.0
+
+            events.append(self.createEvent(
+                'ok', 'CPU %s %s%%' % (name, int(cpu_m * 100)), cpu_m,
+                prefix=name))
+
+        self.cpu = stats
+
+        return events
 
 
 class Memory(Source):

@@ -45,7 +45,9 @@ class TestLinuxSources(unittest.TestCase):
 
         stats = "cpu  4510 68 4580 51126 12580 254 912 0 0 0"
         s._read_proc_stat = lambda: stats
-        [cpu_event, iowait_event] = s.get()
+        events = s.get()
+        cpu_event = events[0]
+        iowait_event = events[5]
         self.assertEqual(cpu_event.service, 'cpu')
         self.assertEqual(round(cpu_event.metric, 4), 0.1395)
         self.assertEqual(iowait_event.service, 'cpu.iowait')
@@ -66,7 +68,9 @@ class TestLinuxSources(unittest.TestCase):
 
         stats = "cpu  4510 68 4580 51126 12580 254 912 0"
         s._read_proc_stat = lambda: stats
-        [cpu_event, iowait_event] = s.get()
+        events = s.get()
+        cpu_event = events[0]
+        iowait_event = events[5]
         self.assertEqual(cpu_event.service, 'cpu')
         self.assertEqual(round(cpu_event.metric, 4), 0.1395)
         self.assertEqual(iowait_event.service, 'cpu.iowait')
