@@ -22,12 +22,12 @@ class DatagramReceiver(DatagramProtocol):
     def process_flow_sample(self, sflow, flow):
         for k,v in flow.flows.items():
             if isinstance(v, flows.HeaderSample) and v.frame:
-                self.receive_flow(flow, v.frame)
+                reactor.callLater(0, self.receive_flow, flow, v.frame, sflow.host)
                 
     def process_counter_sample(self, sflow, counter):
         for k,v in counter.counters.items():
             if isinstance(v, counters.InterfaceCounters):
-                reactor.callLater(0, self.receive_counter, v)
+                reactor.callLater(0, self.receive_counter, v, sflow.host)
 
             elif isinstance(v, counters.HostCounters):
                 reactor.callLater(0, self.receive_host_counter, v)
