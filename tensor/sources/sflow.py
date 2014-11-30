@@ -22,7 +22,8 @@ from tensor.protocol.sflow.protocol import flows, counters
 
 
 class sFlowReceiver(server.DatagramReceiver):
-    """sFlow datagram protocol"""
+    """sFlow datagram protocol
+    """
     def __init__(self, source):
         self.source = source
         self.lookup = source.config.get('dnslookup', True)
@@ -188,4 +189,6 @@ class sFlow(Source):
         pass
 
     def startTimer(self):
+        """Creates a sFlow datagram server
+        """
         reactor.listenUDP(self.config.get('port', 6343), sFlowReceiver(self))
