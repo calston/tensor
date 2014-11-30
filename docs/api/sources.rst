@@ -55,3 +55,10 @@ tensor.sources.media.libav
    :members:
    :show-inheritance:
 
+tensor.sources.sflow
+====================
+
+.. automodule:: tensor.sources.sflow
+   :members:
+   :show-inheritance:
+

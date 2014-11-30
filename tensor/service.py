@@ -68,6 +68,7 @@ class TensorService(service.Service):
         self.server = self.config.get('server', 'localhost')
         self.port = int(self.config.get('port', 5555))
         self.proto = self.config.get('proto', 'tcp')
+        self.inter = self.config.get('interval', 60.0)
 
         if self.debug:
             print "config:", repr(config)

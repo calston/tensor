@@ -1,9 +1,42 @@
 import signal
+import time
 from StringIO import StringIO
 
 from twisted.internet import reactor, protocol, defer, error
 from twisted.python import log
+from twisted.names import client
 
+
+class Resolver(object):
+    def __init__(self):
+        self.recs = {}
+        
+        self.resolver = client.getResolver()
+
+    def reverseNameFromIPAddress(self, address):
+        return '.'.join(reversed(address.split('.'))) + '.in-addr.arpa'
+
+    def reverse(self, ip):
+        def _ret(result, ip):
+            host = ip
+            if isinstance(result, tuple):
+                answers, authority, additional = result
+                if isinstance(answers, list):
+                    ttl = answers[0].payload.ttl
+                    host = answers[0].payload.name.name
+                    self.recs[ip] = (host, ttl, time.time())
+
+            return host
+
+        if ip in self.recs:
+            host, ttl, t = self.recs[ip]
+
+            if (time.time() - t) < ttl:
+                return defer.maybeDeferred(lambda x: x, host)
+
+        return self.resolver.lookupPointer(
+            name=self.reverseNameFromIPAddress(address=ip)
+        ).addCallback(_ret, ip).addErrback(_ret, ip)
 
 class BodyReceiver(protocol.Protocol):
     """ Simple buffering consumer for body objects """

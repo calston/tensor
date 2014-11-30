@@ -139,7 +139,7 @@ class Source(object):
                 'Unhandled error in service %s: %s' % (self.service, e), None)
             )
 
-    def createEvent(self, state, description, metric, prefix=None):
+    def createEvent(self, state, description, metric, prefix=None, hostname=None):
         """Creates an Event object from the Source configuration"""
         if prefix:
             service_name = self.service + "." + prefix
@@ -162,7 +162,7 @@ class Source(object):
                     state = 'critical'
 
         return Event(state, service_name, description, metric, self.ttl,
-            hostname = self.hostname
+            hostname = hostname or self.hostname
         )
 
     def get(self):
