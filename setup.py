@@ -19,7 +19,8 @@ setup(
     install_requires=[
         'Twisted',
         'PyYaml',
-        'protobuf'
+        'protobuf',
+        'construct',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
