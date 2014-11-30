@@ -170,15 +170,16 @@ class sFlow(Source):
     **Configuration arguments:**
     
     :port: UDP port to listen on
-    :type method: int.
-    :: A text string to match in the document when it is correct
-    :type match: str.
-    :useragent: User-Agent header to use
-    :type useragent: str.
+    :type port: int.
+    :dnslookup: Enable reverse DNS lookup for device IPs (default: True)
+    :type dnslookup: bool.
 
     **Metrics:**
-
-    :(service name).latency: Time to complete request
+    
+    Metrics are published using the key patterns 
+    (device).(service name).(interface).(in|out)Octets
+    (device).(service name).(interface).ip
+    (device).(service name).(interface).port
     """
 
     implements(ITensorSource)
