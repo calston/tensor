@@ -9,21 +9,17 @@
 import time
 
 from twisted.internet import defer, reactor
-from twisted.web.client import Agent
-from twisted.web.http_headers import Headers
 from twisted.names import client
 
 from zope.interface import implements
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
+from tensor import utils
 
 from tensor.protocol.sflow import server
 from tensor.protocol.sflow.protocol import flows, counters
 
-
-def reverseNameFromIPAddress(address):
-    return '.'.join(reversed(address.split('.'))) + '.in-addr.arpa'
 
 class sFlowReceiver(server.DatagramReceiver):
     """sFlow datagram protocol"""
@@ -32,6 +28,8 @@ class sFlowReceiver(server.DatagramReceiver):
         self.lookup = source.config.get('dnslookup', True)
         self.counterCache = {}
         self.convoQueue = {}
+
+        self.resolver = utils.Resolver()
 
     def process_convo_queue(self, queue, host, idx, deltaIn, tDelta):
         cn_bytes = sum(map(lambda i: i[4], queue))
@@ -94,13 +92,7 @@ class sFlowReceiver(server.DatagramReceiver):
                 )
 
     def receive_flow(self, flow, sample, host):
-        def queueFlow(result, host):
-
-            if isinstance(result, tuple):
-                answers, authority, additional = result
-                if isinstance(answers, list):
-                    host = answers[0].payload.name.name
-
+        def queueFlow(host):
             if isinstance(sample, flows.IPv4Header):
                 sport, dport = (sample.ip_sport, sample.ip_dport)
                 src, dst = (sample.ip.src.asString(), sample.ip.dst.asString())
@@ -116,21 +108,14 @@ class sFlowReceiver(server.DatagramReceiver):
                     (src, sport, dst, dport, bytes))
 
         if self.lookup:
-            return client.lookupPointer(
-                    name=reverseNameFromIPAddress(address=host)
-                ).addCallback(queueFlow, host).addErrback(queueFlow, host)
+            return self.resolver.reverse(host).addCallback(
+                queueFlow).addErrback(queueFlow)
         else:
             return queueFlow(None, host)
 
     def receive_counter(self, counter, host):
-
-        def _hostcb(result, host):
+        def _hostcb(host):
             idx = counter.if_index
-
-            if isinstance(result, tuple):
-                answers, authority, additional = result
-                if isinstance(answers, list):
-                    host = answers[0].payload.name.name
 
             if not host in self.convoQueue:
                 self.convoQueue[host] = {}
@@ -174,9 +159,8 @@ class sFlowReceiver(server.DatagramReceiver):
                     counter.if_inOctets, counter.if_outOctets, time.time())
 
         if self.lookup:
-            return client.lookupPointer(
-                    name=reverseNameFromIPAddress(address=host)
-                ).addCallback(_hostcb, host).addErrback(_hostcb, host)
+            return self.resolver.reverse(host).addCallback(
+                _hostcb).addErrback(_hostcb)
         else:
             return _hostcb(None, host)
 
