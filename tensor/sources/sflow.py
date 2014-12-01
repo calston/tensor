@@ -82,20 +82,25 @@ class sFlowReceiver(server.DatagramReceiver):
             for port, bytes in v.items():
                 m = ((bytes/float(btotal)) * deltaIn)/tDelta
 
-                self.source.queueBack(
-                    self.source.createEvent('ok', 
-                        'sFlow if:%s port:%s inOctets/sec %0.2f' % (
-                            idx, port, m),
-                        m,
-                        prefix='%s.port.%s.%s' % (idx, port, direction),
-                        hostname=host
+                if port:
+                    self.source.queueBack(
+                        self.source.createEvent('ok', 
+                            'sFlow if:%s port:%s inOctets/sec %0.2f' % (
+                                idx, port, m),
+                            m,
+                            prefix='%s.port.%s.%s' % (idx, port, direction),
+                            hostname=host
+                        )
                     )
-                )
 
     def receive_flow(self, flow, sample, host):
         def queueFlow(host):
             if isinstance(sample, flows.IPv4Header):
-                sport, dport = (sample.ip_sport, sample.ip_dport)
+                if sample.ip.proto in ('TCP', 'UDP'):
+                    sport, dport = (sample.ip_sport, sample.ip_dport)
+                else:
+                    sport, dport = (None, None)
+
                 src, dst = (sample.ip.src.asString(), sample.ip.dst.asString())
                 bytes = sample.ip.total_length
 
