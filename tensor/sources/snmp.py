@@ -124,6 +124,8 @@ class SNMP(Source):
                 irate = (inoct - lastin)/tDelta
                 orate = (outoct - lastout)/tDelta
 
+                self.cache[iface] = (inoct, outoct, time.time())
+
                 # Send events
                 events.append(
                     self.createEvent('ok',
