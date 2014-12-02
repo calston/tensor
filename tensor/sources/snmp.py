@@ -82,8 +82,8 @@ class SNMP(Source):
 
     **Configuration arguments:**
 
-    :host: SNMP agent host (default: localhost)
-    :type host: str.
+    :ip: SNMP agent host (default: 127.0.0.1)
+    :type ip: str.
     :port: SNMP port (default: 161)
     :type port: int.
     :community: SNMP read community
@@ -96,49 +96,132 @@ class SNMP(Source):
 
         self.cache = {}
 
-        host = self.config.get('host', 'localhost')
+        host = self.config.get('ip', '127.0.0.1')
         port = int(self.config.get('port', 161))
 
         # Must add v3 support
 
         community = self.config.get('community', None)
         self.snmp = SNMPConnection(host, port, community)
+    
+    @defer.inlineCallbacks
+    def getCounter(self, soid):
+        data = yield self.snmp.walk(soid)
+        now = time.time()
+
+        vals = []
+        for oid, val in data:
+            val = float(val)
+            if oid in self.cache:
+                lastVal, t = self.cache[oid]
+
+                delta = now - t
+                if val >= lastVal:
+                    m = (val - lastVal)/delta
+                    vals.append((str(oid), m))
+                    self.cache[oid] = (val, now)
+                else:
+                    vals.append((str(oid), None))
+            else:
+                self.cache[oid] = (val, now)
+
+        defer.returnValue(vals)
+
+    @defer.inlineCallbacks
+    def getIfMetrics(self):
+        ifaces = yield self.snmp.walk('1.3.6.1.2.1.2.2.1.2')
+
+        table = [
+            ('1.3.6.1.2.1.2.2.1.10', 'ifInOctets'),
+            ('1.3.6.1.2.1.2.2.1.11', 'ifInUcastPkts'),
+            ('1.3.6.1.2.1.2.2.1.12', 'ifInNUcastPkts'),
+            ('1.3.6.1.2.1.2.2.1.14', 'ifInErrors'),
+            ('1.3.6.1.2.1.2.2.1.13', 'ifInDiscards'),
+            ('1.3.6.1.2.1.2.2.1.16', 'ifOutOctets'),
+            ('1.3.6.1.2.1.2.2.1.17', 'ifOutUcastPkts'),
+            ('1.3.6.1.2.1.2.2.1.18', 'ifOutNUcastPkts'),
+            ('1.3.6.1.2.1.2.2.1.20', 'ifOutErrors'),
+            ('1.3.6.1.2.1.2.2.1.19', 'ifOutDiscards'),
+        ]
+        
+        data = {}
+        for oid, key in table:
+            d = yield self.getCounter(oid)
+
+            for i, v in enumerate(d):
+                noid, val = v
+                if val:
+                    iface = str(ifaces[i][1])
+                    if not iface in data:
+                        data[iface] = {}
+                    data[iface][key] = val
+
+        events = []
+
+        for iface, metrics in data.items():
+            for key, val in metrics.items():
+                events.append(
+                    self.createEvent('ok',
+                        "SNMP interface %s %s=%0.2f" % (iface, key, val),
+                        val,
+                        prefix="%s.%s" % (iface, key)))
+
+        defer.returnValue(events)
+
+    @defer.inlineCallbacks
+    def get(self):
+        events = yield self.getIfMetrics()
+        defer.returnValue(events)
+
+class SNMPCisco837(SNMP):
+    """Connects to a Cisco 837 and makes metrics
+
+    **Configuration arguments:**
+
+    :ip: SNMP agent host (default: 127.0.0.1)
+    :type ip: str.
+    :port: SNMP port (default: 161)
+    :type port: int.
+    :community: SNMP read community
+    :type community: str.
+    """
 
     @defer.inlineCallbacks
     def get(self):
 
-        ifaces = yield self.snmp.walk('1.3.6.1.2.1.2.2.1.2')
-        ifInOctets = yield self.snmp.walk('1.3.6.1.2.1.2.2.1.10')
-        ifOutOctets = yield self.snmp.walk('1.3.6.1.2.1.2.2.1.16')
+        events = yield self.getIfMetrics()
 
-        getVal =  lambda j: map(lambda i: i[1], j)
+        sync_us = (yield self.snmp.walk('1.3.6.1.2.1.10.94.1.1.5'))[0][1]
+        sync_ds = (yield self.snmp.walk('1.3.6.1.2.1.10.94.1.1.4'))[0][1]
 
-        values = zip(getVal(ifaces), getVal(ifInOctets), getVal(ifOutOctets))
-            
-        events = []
-        for iface, inoct, outoct in values:
-            if iface in self.cache:
-                # Calculate the average rate over the last sample interval
-                lastin, lastout, lastt = self.cache[iface]
-                tDelta = time.time() - lastt
-                irate = (inoct - lastin)/tDelta
-                orate = (outoct - lastout)/tDelta
+        sync_us = int(sync_us)
+        sync_ds = int(sync_ds)
 
-                self.cache[iface] = (inoct, outoct, time.time())
+        events.append(
+            self.createEvent('ok', "SNMP ADSL sync downstream %s" % sync_ds,
+                sync_ds, prefix="adsl.rxrate"))
 
-                # Send events
-                events.append(
-                    self.createEvent('ok',
-                        "SNMP interface %s %0.2f in" % (iface, irate),
-                        irate,
-                        prefix="%s.ifInOctets" % iface))
-                events.append(
-                    self.createEvent('ok',
-                        "SNMP interface %s %0.2f in" % (iface, orate),
-                        orate,
-                        prefix="%s.ifOutOctets" % iface))
+        events.append(
+            self.createEvent('ok', "SNMP ADSL sync upstream %s" % sync_us,
+                sync_us, prefix="adsl.txrate"))
 
-            else:
-                self.cache[iface] = (inoct, outoct, time.time())
+        link = yield self.snmp.walk('1.3.6.1.2.1.10.94.1.1.3')
+        link = dict([(str(i), j) for i, j in link])
 
+        output = int(link['1.3.6.1.2.1.10.94.1.1.3.1.7.15'])/10.0
+        attn = int(link['1.3.6.1.2.1.10.94.1.1.3.1.5.15'])/10.0
+        margin = int(link['1.3.6.1.2.1.10.94.1.1.3.1.4.15'])/10.0
+
+        events.append(
+            self.createEvent('ok', "SNMP ADSL output power %0.2fdBm" % output,
+                output, prefix="adsl.outpwr"))
+
+        events.append(
+            self.createEvent('ok', "SNMP ADSL attenuation %0.2fdB" % attn,
+                attn, prefix="adsl.attn"))
+
+        events.append(
+            self.createEvent('ok', "SNMP ADSL noise margin %0.2fdB" % margin,
+                margin, prefix="adsl.margin"))
+        
         defer.returnValue(events)
