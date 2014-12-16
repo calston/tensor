@@ -6,12 +6,13 @@ from zope.interface import implements
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
+from tensor import aggregators
 
 from pysnmp.entity import engine, config
 from pysnmp.entity.rfc3413.twisted import cmdgen
 from pysnmp.carrier.twisted import dispatch
 from pysnmp.carrier.twisted.dgram import udp
-from pysnmp.proto import rfc1905
+from pysnmp.proto import rfc1905, rfc1902
 
 
 class SNMPConnection(object):
@@ -94,8 +95,6 @@ class SNMP(Source):
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)
 
-        self.cache = {}
-
         host = self.config.get('ip', '127.0.0.1')
         port = int(self.config.get('port', 161))
 
@@ -104,28 +103,8 @@ class SNMP(Source):
         community = self.config.get('community', None)
         self.snmp = SNMPConnection(host, port, community)
     
-    @defer.inlineCallbacks
     def getCounter(self, soid):
-        data = yield self.snmp.walk(soid)
-        now = time.time()
-
-        vals = []
-        for oid, val in data:
-            val = float(val)
-            if oid in self.cache:
-                lastVal, t = self.cache[oid]
-
-                delta = now - t
-                if val >= lastVal:
-                    m = (val - lastVal)/delta
-                    vals.append((str(oid), m))
-                    self.cache[oid] = (val, now)
-                else:
-                    vals.append((str(oid), None))
-            else:
-                self.cache[oid] = (val, now)
-
-        defer.returnValue(vals)
+        return self.snmp.walk(soid)
 
     @defer.inlineCallbacks
     def getIfMetrics(self):
@@ -147,9 +126,9 @@ class SNMP(Source):
         data = {}
         for oid, key in table:
             d = yield self.getCounter(oid)
-
             for i, v in enumerate(d):
                 noid, val = v
+
                 if val:
                     iface = str(ifaces[i][1])
                     if not iface in data:
@@ -160,11 +139,19 @@ class SNMP(Source):
 
         for iface, metrics in data.items():
             for key, val in metrics.items():
+                aggr = None
+
+                if isinstance(val, rfc1902.Counter32):
+                    aggr = aggregators.Counter32
+
+                if isinstance(val, rfc1902.Counter64):
+                    aggr = aggregators.Counter64
+
                 events.append(
                     self.createEvent('ok',
-                        "SNMP interface %s %s=%0.2f" % (iface, key, val),
-                        val,
-                        prefix="%s.%s" % (iface, key)))
+                        "SNMP interface %s %s=%0.2f" % (iface, key, int(val)),
+                        int(val),
+                        prefix="%s.%s" % (iface, key), aggregation=aggr))
 
         defer.returnValue(events)
 

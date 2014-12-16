@@ -21,6 +21,8 @@ class TensorService(service.Service):
         self.sources = []
         self.outputs = []
 
+        self.evCache = {}
+
         self.eventCounter = 0
 
         self.factory = None
@@ -143,10 +145,25 @@ class TensorService(service.Service):
             self.eventCounter += 1
             event = [event]
 
+        # Handle aggregation for each event
+        queue = []
+        for ev in event:
+            if ev.aggregation:
+                id = ev.id()
+                if id in self.evCache:
+                    tDelta = ev.time - self.evCache[id].time
+                    m = ev.aggregation(
+                        self.evCache[id].metric, ev.metric, tDelta)
+                    queue.append(ev.copyWithMetric(m))
+
+                self.evCache[id] = ev
+            else:
+                queue.append(ev)
+
         for output in self.outputs:
             if self.debug:
-                log.msg("Sending event %s" % event)
-            reactor.callLater(0, output.eventsReceived, event)
+                log.msg("Sending event %s" % queue)
+            reactor.callLater(0, output.eventsReceived, queue)
 
     @defer.inlineCallbacks
     def startService(self):
