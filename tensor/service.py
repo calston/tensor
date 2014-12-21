@@ -158,7 +158,7 @@ class TensorService(service.Service):
         """
 
         if isinstance(events, list):
-            self.eventCounter += len(event)
+            self.eventCounter += len(events)
         else:
             self.eventCounter += 1
             events = [events]
