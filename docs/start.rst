@@ -95,6 +95,16 @@ This will ping `8.8.8.8` every 60 seconds and raise a critical alert for
 the latency metric if it exceeds 100ms, and the packet loss metric if there
 is any at all.
 
+`critical` and `warning` matches can also be a regular expression for sources
+which output keys for different devices and metrics::
+
+    service: network
+    source: tensor.sources.linux.basic.Network
+    ...
+    critical: {
+        network.\w+.tx_packets: "> 1000",
+    }
+
 Starting Tensor
 ===============
 
