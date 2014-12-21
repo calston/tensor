@@ -114,6 +114,26 @@ class TestLinuxSources(unittest.TestCase):
 
         yield s.get()
 
+    def test_network_stats(self):
+        self.skip_if_no_hostname()
+        s = basic.Network(
+            {'interval': 1.0, 'service': 'net', 'ttl': 60}, self._qb, None)
+
+        s._readStats = lambda: [
+            '  eth0: 254519754 1437339    0    0    0     0          0      '+
+            '   0 202067280 1154168    0    0    0     0       0          0',
+            '    lo: 63830682  900933    0    0    0     0          0       '+
+            '  0 63830682  900933    0    0    0     0       0          0'
+        ]
+
+        ev = s.get()
+        self.assertEquals(ev[0].metric, 254519754)
+        self.assertEquals(ev[1].metric, 1437339)
+        self.assertEquals(ev[2].metric, 0)
+        self.assertEquals(ev[3].metric, 202067280)
+        self.assertEquals(ev[4].metric, 1154168)
+        self.assertEquals(ev[5].metric, 0)
+
 
 class TestRiakSources(unittest.TestCase):
     def _qb(self, result):

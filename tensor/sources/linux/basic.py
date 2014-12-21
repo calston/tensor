@@ -5,6 +5,7 @@ from twisted.internet import defer
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 from tensor.utils import fork
+from tensor.aggregators import Counter64
 
 
 class LoadAverage(Source):
@@ -155,3 +156,64 @@ class DiskFree(Source):
                 )
 
         defer.returnValue(events)
+
+class Network(Source):
+    """Returns all network interface statistics
+
+    **Metrics:**
+
+    :(service name).(device).tx_bytes: Bytes transmitted
+    :(service name).(device).tx_packets: Packets transmitted
+    :(service name).(device).tx_errors: Errors
+    :(service name).(device).rx_bytes: Bytes received
+    :(service name).(device).rx_packets: Packets received
+    :(service name).(device).rx_errors: Errors
+    """
+    implements(ITensorSource)
+
+    def _readStats(self):
+        proc_dev = open('/proc/net/dev', 'rt').read()
+
+        return proc_dev.strip('\n').split('\n')[2:]
+
+    def get(self):
+        ev = []
+
+        for stat in self._readStats():
+            items = stat.split()
+            iface = items[0].strip(':')
+            tx_bytes = int(items[1])
+            tx_packets = int(items[2])
+            tx_err = int(items[3])
+            rx_bytes = int(items[9])
+            rx_packets = int(items[10])
+            rx_err = int(items[11])
+            
+            ev.extend([
+                self.createEvent('ok',
+                    'Network %s TX bytes/sec: %s' % (iface, tx_bytes),
+                    tx_bytes, prefix='%s.tx_bytes' % iface,
+                    aggregation=Counter64),
+                self.createEvent('ok',
+                    'Network %s TX packets/sec: %s' % (iface, tx_packets),
+                    tx_packets, prefix='%s.tx_packets' % iface,
+                    aggregation=Counter64),
+                self.createEvent('ok',
+                    'Network %s TX errors/sec: %s' % (iface, tx_err),
+                    tx_err, prefix='%s.tx_errors' % iface,
+                    aggregation=Counter64),
+                self.createEvent('ok',
+                    'Network %s RX bytes/sec: %s' % (iface, rx_bytes),
+                    rx_bytes, prefix='%s.rx_bytes' % iface,
+                    aggregation=Counter64),
+                self.createEvent('ok',
+                    'Network %s RX packets/sec: %s' % (iface, rx_packets),
+                    rx_packets, prefix='%s.rx_packets' % iface,
+                    aggregation=Counter64),
+                self.createEvent('ok',
+                    'Network %s RX errors/sec: %s' % (iface, rx_err),
+                    rx_err, prefix='%s.rx_errors' % iface,
+                    aggregation=Counter64),
+            ])
+
+        return ev
