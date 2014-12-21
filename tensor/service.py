@@ -1,6 +1,7 @@
 import time
 import os
 import importlib
+import re
 
 import yaml
 
@@ -22,6 +23,8 @@ class TensorService(service.Service):
         self.outputs = []
 
         self.evCache = {}
+        self.critical = {}
+        self.warn = {}
 
         self.eventCounter = 0
 
@@ -132,6 +135,12 @@ class TensorService(service.Service):
             if not ('interval' in source.keys()):
                 source['interval'] = self.inter
 
+            for k, v in source.get('critical', {}).items():
+                self.critical[re.compile(k)] = v
+                
+            for k, v in source.get('warning', {}).items():
+                self.warn[re.compile(k)] = v
+
             self.sources.append(sourceObj(source, self.sendEvent, self))
 
     def _aggregateQueue(self, events):
@@ -152,6 +161,21 @@ class TensorService(service.Service):
 
         return queue
 
+    def setStates(self, events):
+        for ev in events:
+            if ev.state == 'ok':
+                for k, v in self.warn.items():
+                    if k.match(ev.service):
+                        s = eval("service %s" % v, {'service': ev.metric})
+                        if s:
+                            ev.state = 'warning'
+
+                for k, v in self.critical.items():
+                    if k.match(ev.service):
+                        s = eval("service %s" % v, {'service': ev.metric})
+                        if s:
+                            ev.state = 'critical'
+
     def sendEvent(self, events):
         """Callback that all event sources call when they have a new event
         or list of events
@@ -164,6 +188,7 @@ class TensorService(service.Service):
             events = [events]
     
         queue = self._aggregateQueue(events)
+        self.setStates(queue)
 
         for output in self.outputs:
             if self.debug:

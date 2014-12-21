@@ -1,4 +1,5 @@
 import hashlib
+import re
 import time
 import socket
 import exceptions
@@ -172,21 +173,6 @@ class Source(object):
             service_name = self.service + "." + prefix
         else:
             service_name = self.service
-
-        # Dynamic state check (unless the check already set it)
-        if state == "ok":
-            critical = self.config.get('critical', {}).get(service_name, None)
-            warn = self.config.get('warning', {}).get(service_name, None)
-
-            if warn:
-                s = eval("service %s" % warn, {'service': metric})
-                if s:
-                    state = 'warning'
-
-            if critical:
-                s = eval("service %s" % critical, {'service': metric})
-                if s:
-                    state = 'critical'
 
         return Event(state, service_name, description, metric, self.ttl,
             hostname = hostname or self.hostname, aggregation=aggregation
