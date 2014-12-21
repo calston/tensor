@@ -182,3 +182,27 @@ class TestService(unittest.TestCase):
     def test_aggregate_counter64_rollover(self):
         metric = self._aggregator_test(18446744073709551610, 5, Counter64, 4)
         self.assertEqual(metric, 2.5)
+
+    def test_state_match(self):
+        service = self.make_service({
+            'interval': 1.0, 'ttl': 60.0, 
+            'sources': [{
+                'source': 'tensor.sources.linux.basic.Network', 
+                'interval': 2.0, 
+                'critical': {'network.\\w+.tx_bytes': '> 500'}, 
+                'warning': {'network.\\w+.tx_bytes': '> 100'}, 
+                'service': 'network'}]
+        })
+
+        ev1 = Event('ok', 'network.foo.tx_bytes', 'net1', 50, 1,
+            hostname='localhost')
+        ev2 = Event('ok', 'network.foo.tx_bytes', 'net1', 1000, 1,
+            hostname='localhost')
+        ev3 = Event('ok', 'network.foo.tx_bytes', 'net1', 200, 1,
+            hostname='localhost')
+        
+        service.setStates([ev1, ev2, ev3])
+
+        self.assertEqual(ev1.state, 'ok')
+        self.assertEqual(ev2.state, 'critical')
+        self.assertEqual(ev3.state, 'warning')
