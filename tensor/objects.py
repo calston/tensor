@@ -1,3 +1,4 @@
+import hashlib
 import time
 import socket
 import exceptions
@@ -23,19 +24,44 @@ class Event(object):
     :tags: List of tag strings
     :hostname: Hostname for the event (defaults to system fqdn)
     """
-    def __init__(self, state, service, description, metric, ttl, tags=[], hostname=None):
+    def __init__(self, state, service, description, metric, ttl, tags=[],
+            hostname=None, aggregation=None):
         self.state = state
         self.service = service
         self.description = description
         self.metric = metric
         self.ttl = ttl
         self.tags = tags
+        self.aggregation = aggregation
 
         self.time = time.time()
         if hostname:
             self.hostname = hostname
         else:
             self.hostname = socket.gethostbyaddr(socket.gethostname())[0]
+
+    def id(self):
+        return hashlib.sha1('%s.%s' % (self.hostname, self.service)
+            ).hexdigest()
+
+    def __repr__(self):
+        ser = ['%s=%s' % (k, repr(v)) for k,v in {
+            'hostname': self.hostname,
+            'state': self.state,
+            'service': self.service,
+            'metric': self.metric,
+            'ttl': self.ttl,
+            'tags': self.tags,
+            'aggregation': self.aggregation
+        }.items()]
+
+        return "<Event %s>" % (','.join(ser))
+
+    def copyWithMetric(self, m):
+        return Event(
+            self.state, self.service, self.description, m, self.ttl, self.tags,
+            self.hostname, self.aggregation
+        )
 
 class Output(object):
     """Output parent class
@@ -139,7 +165,8 @@ class Source(object):
                 'Unhandled error in service %s: %s' % (self.service, e), None)
             )
 
-    def createEvent(self, state, description, metric, prefix=None, hostname=None):
+    def createEvent(self, state, description, metric, prefix=None,
+            hostname=None, aggregation=None):
         """Creates an Event object from the Source configuration"""
         if prefix:
             service_name = self.service + "." + prefix
@@ -162,7 +189,7 @@ class Source(object):
                     state = 'critical'
 
         return Event(state, service_name, description, metric, self.ttl,
-            hostname = hostname or self.hostname
+            hostname = hostname or self.hostname, aggregation=aggregation
         )
 
     def get(self):
