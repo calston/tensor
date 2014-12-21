@@ -62,3 +62,10 @@ tensor.sources.sflow
    :members:
    :show-inheritance:
 
+tensor.sources.snmp
+====================
+
+.. automodule:: tensor.sources.snmp
+   :members:
+   :show-inheritance:
+
