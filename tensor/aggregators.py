@@ -16,7 +16,7 @@ def Counter64(a, b, delta):
 
     return (b - a) / float(delta)
 
-def Derive(a, b, delta):
+def Counter(a, b, delta):
     """Counter derivative
     """
     return (b - a) / float(delta)

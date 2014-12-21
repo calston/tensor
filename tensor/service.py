@@ -134,20 +134,10 @@ class TensorService(service.Service):
 
             self.sources.append(sourceObj(source, self.sendEvent, self))
 
-    def sendEvent(self, event):
-        """Callback that all event sources call when they have a new event
-        or list of events
-        """
-
-        if isinstance(event, list):
-            self.eventCounter += len(event)
-        else:
-            self.eventCounter += 1
-            event = [event]
-
+    def _aggregateQueue(self, events):
         # Handle aggregation for each event
         queue = []
-        for ev in event:
+        for ev in events:
             if ev.aggregation:
                 id = ev.id()
                 if id in self.evCache:
@@ -160,9 +150,24 @@ class TensorService(service.Service):
             else:
                 queue.append(ev)
 
+        return queue
+
+    def sendEvent(self, events):
+        """Callback that all event sources call when they have a new event
+        or list of events
+        """
+
+        if isinstance(events, list):
+            self.eventCounter += len(event)
+        else:
+            self.eventCounter += 1
+            events = [events]
+    
+        queue = self._aggregateQueue(events)
+
         for output in self.outputs:
             if self.debug:
-                log.msg("Sending event %s" % queue)
+                log.msg("Sending events %s" % queue)
             reactor.callLater(0, output.eventsReceived, queue)
 
     @defer.inlineCallbacks
