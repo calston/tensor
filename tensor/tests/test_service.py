@@ -9,6 +9,7 @@ from tensor.ihateprotobuf import proto_pb2
 from tensor.objects import Event
 from tensor.protocol.riemann import RiemannClientFactory
 from tensor.service import TensorService
+from tensor.aggregators import Counter32, Counter64, Counter
 
 
 def wait(secs):
@@ -142,3 +143,42 @@ class TestService(unittest.TestCase):
         [_, msg2] = yield factory.wait_for_messages(2)
         [event] = msg.events
         self.assertEqual(event.description, 'Sky has not fallen')
+
+    def _aggregator_test(self, m1, m2, aggregator, delta):
+        service = self.make_service({})
+
+        ev1 = Event('ok', 'num', 'Number', m1, delta, 
+            hostname='localhost', aggregation=aggregator)
+
+        ev2 = Event('ok', 'num', 'Number', m2, delta, 
+            hostname='localhost', aggregation=aggregator)
+
+        ev1.time = 1
+        ev2.time = delta+1
+
+        q1 = service._aggregateQueue([ev1])
+        ev = service._aggregateQueue([ev2])[0]
+
+        self.assertEqual(q1, [])
+
+        return ev.metric
+
+    def test_aggregate_counter32(self):
+        metric = self._aggregator_test(1, 2, Counter32, 4)
+        self.assertEqual(metric, 0.25)
+
+    def test_aggregate_counter64(self):
+        metric = self._aggregator_test(1, 2, Counter64, 4)
+        self.assertEqual(metric, 0.25)
+
+    def test_aggregate_counter(self):
+        metric = self._aggregator_test(1, 2, Counter, 4)
+        self.assertEqual(metric, 0.25)
+
+    def test_aggregate_counter32_rollover(self):
+        metric = self._aggregator_test(4294967290, 5, Counter32, 4)
+        self.assertEqual(metric, 2.5)
+ 
+    def test_aggregate_counter64_rollover(self):
+        metric = self._aggregator_test(18446744073709551610, 5, Counter64, 4)
+        self.assertEqual(metric, 2.5)
