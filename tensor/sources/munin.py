@@ -132,10 +132,10 @@ class MuninNode(Source):
 
                     if m_type == 'COUNTER':
                         events.append(self.createEvent('ok', info, val,
-                            prefix=prefix, aggregator=Counter32))
+                            prefix=prefix, aggregation=Counter32))
                     elif m_type == 'DERIVE':
                         events.append(self.createEvent('ok', info, val,
-                            prefix=prefix, aggregator=Counter))
+                            prefix=prefix, aggregation=Counter))
                     else:
                         events.append(self.createEvent('ok', info, val,
                             prefix=prefix))
