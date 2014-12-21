@@ -17,7 +17,7 @@ from zope.interface import implements
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
-
+from tensor.aggregators import Counter, Counter32
 
 class MuninProtocol(LineReceiver):
     """MuninProtocol - provides a line receiver protocol for making requests
@@ -77,8 +77,6 @@ class MuninNode(Source):
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)
 
-        self.cache = {}
-
     @defer.inlineCallbacks
     def get(self):
         host = self.config.get('host', 'localhost')
@@ -114,7 +112,6 @@ class MuninNode(Source):
 
             # Retrieve the metrics
             metrics = yield proto.sendCommand('fetch %s' % plug, True)
-            plugin_metrics = {}
             for m in metrics:
                 name, val = m.split(' ', 1)
                 if name != 'multigraph':
@@ -129,57 +126,19 @@ class MuninNode(Source):
                     except:
                         continue
 
-                    if m_type == 'GAUGE':
-                        # Standard gauge, just passed through
-                        plugin_metrics[metric] = val
-                    elif m_type == 'COUNTER':
-                        # Wrapping counter
-                        last = self.cache.get(base, None)
-                        if last is not None:
-                            ltime = self.cache[base+'.rtime']
-                            t_delta = time.time() - ltime
-                            if val < last:
-                                # wrap
-                                if last > 4294967295:
-                                    # uint64
-                                    rem = 18446744073709551615 - last
-                                elif last < 2147483647:
-                                    rem = 2147483647 - last
-                                else:
-                                    rem = 4294967295 - last
+                    base = '%s.%s' % (plug, metric)
+                    info = plugin_config.get('%s.info' % base, base)
+                    prefix = '%s.%s' % (category, base)
 
-                                change = rem + val
-                            else:
-                                change = val - last
-
-                            plugin_metrics[metric] = change/t_delta
-                        
-                        self.cache[base+'.rtime'] = time.time()
-                        self.cache[base] = val
+                    if m_type == 'COUNTER':
+                        events.append(self.createEvent('ok', info, val,
+                            prefix=prefix, aggregator=Counter32))
                     elif m_type == 'DERIVE':
-                        # Counter without wrap, and a min
-                        last = self.cache.get(base, None)
-
-                        if last is not None:
-                            ltime = self.cache[base+'.rtime']
-                            t_delta = time.time() - ltime
-                            p_min = int(plugin_config.get('%s.min' % base, 0))
-
-                            change = val - last
-
-                            if change >= p_min:
-                                plugin_metrics[metric] = change/t_delta
-                        
-                        self.cache[base+'.rtime'] = time.time()
-                        self.cache[base] = val
-
-            # Add all the metrics to events
-            for k, v in plugin_metrics.items():
-                base = '%s.%s' % (plug, k)
-                info = plugin_config.get('%s.info' % base, base)
-                prefix = '%s.%s' % (category, base)
-
-                events.append(self.createEvent('ok', info, v, prefix=prefix))
+                        events.append(self.createEvent('ok', info, val,
+                            prefix=prefix, aggregator=Counter))
+                    else:
+                        events.append(self.createEvent('ok', info, val,
+                            prefix=prefix))
 
         yield proto.disconnect()
 
