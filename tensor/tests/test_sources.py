@@ -171,4 +171,3 @@ class TestRiakSources(unittest.TestCase):
         self.assertEqual(gets.metric, 2.5)
         self.assertEqual(puts.service, "riak.puts_per_second")
         self.assertEqual(puts.metric, 0.75)
-
