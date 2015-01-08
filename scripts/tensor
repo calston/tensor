@@ -14,6 +14,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=`which twistd`
 NAME=tensor
 DESC=tensor
+FDHACK=4096
 
 test -x $DAEMON || exit 0
 
@@ -23,6 +24,8 @@ DODTIME=2
 DAEMON_OPTS="--pidfile=${PIDFILE} --logfile=${LOGDIR}/tensor.log tensor -c /etc/tensor/tensor.yml"
 
 set -e
+
+ulimit -n $FDHACK
 
 running_pid()
 {
