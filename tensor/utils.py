@@ -81,8 +81,11 @@ class ProcessProtocol(protocol.ProcessProtocol):
     def connectionMade(self):
         @defer.inlineCallbacks
         def killIfAlive():
-            log.msg('Killing source proccess: Timeout %s exceeded' % self.timeout)
-            yield self.transport.signalProcess('KILL')
+            try:
+                yield self.transport.signalProcess('KILL')
+                log.msg('Killed source proccess: Timeout %s exceeded' % self.timeout)
+            except error.ProcessExitedAlready:
+                pass
 
         self.timer = reactor.callLater(self.timeout, killIfAlive)
 
