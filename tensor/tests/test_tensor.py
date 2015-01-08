@@ -1,6 +1,6 @@
 from twisted.trial import unittest
 
-from twisted.internet import defer, reactor
+from twisted.internet import defer, reactor, error
 from twisted.internet.endpoints import TCP4ClientEndpoint, connectProtocol
 
 from tensor.protocol import riemann
@@ -60,7 +60,7 @@ class Tests(unittest.TestCase):
         died = False
         try:
             o, e, c = yield fork('sleep', args=('2',), timeout=0.1)
-        except:
+        except error.ProcessTerminated:
             died = True
 
         self.assertTrue(died)
