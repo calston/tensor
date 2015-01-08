@@ -100,8 +100,12 @@ class Ping(Source):
     def get(self):
         host = self.config.get('destination', self.hostname)
 
-        out, err, code = yield fork('/bin/ping',
-            args=('-q', '-n', '-c', '5', '-i', '0.2', host), timeout=30.0)
+
+        try:
+            out, err, code = yield fork('/bin/ping',
+                args=('-q', '-n', '-c', '5', '-i', '0.2', host), timeout=30.0)
+        except:
+            code = 1
 
         if code == 0:
             # Successful ping

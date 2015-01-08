@@ -32,8 +32,12 @@ class DarwinRTSP(Source):
         host = self.config.get('destination', self.hostname)
 
         t0 = time.time()
-        out, err, code = yield fork('/usr/bin/avprobe',
-            args=('rtsp://%s/sample_100kbit.mp4' % host, ), timeout=30.0)
+        try:
+            out, err, code = yield fork('/usr/bin/avprobe',
+                args=('rtsp://%s/sample_100kbit.mp4' % host, ), timeout=30.0)
+        except:
+            code = 1
+            err = None
 
         t_delta = (time.time() - t0) * 1000
 
@@ -41,7 +45,14 @@ class DarwinRTSP(Source):
             e = self.createEvent('ok', 'RTSP Request time to %s' % host, 
                     t_delta)
         else:
-            error = err.strip('\n').split('\n')[-2]
+            if err:
+                try:
+                    error = err.strip('\n').split('\n')[-2]
+                except:
+                    error = err.replace('\n', '-')
+            else:
+                error = "Execution error"
+
             e = self.createEvent('critical', 
                     'Unable to stream %s:%s' % (host, error),
                     t_delta)
