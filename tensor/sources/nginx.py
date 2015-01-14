@@ -85,7 +85,7 @@ class Nginx(Source):
         for k,v in metrics:
             metric, aggr = v
             events.append(
-                self.createEvent('ok', 'Nginx %s' % (k), k, prefix=metric,
+                self.createEvent('ok', 'Nginx %s' % (k), k, prefix=k,
                     aggregation=aggr)
             )
             
