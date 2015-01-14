@@ -18,7 +18,7 @@ from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 
 from tensor.utils import BodyReceiver, fork
-from tensor.aggregators import Counter
+from tensor.aggregators import Counter64
 
 class Nginx(Source):
     """Reads Nginx stub_status
@@ -51,9 +51,9 @@ class Nginx(Source):
 
         metrics = {
             'active': (float(active), None),
-            'accepts': (float(accepts), Counter),
-            'requests': (float(requests), Counter),
-            'handled': (float(handled), Counter),
+            'accepts': (float(accepts), Counter64),
+            'requests': (float(requests), Counter64),
+            'handled': (float(handled), Counter64),
             'reading': (float(reading), None),
             'writing': (float(writing), None),
             'waiting': (float(waiting), None),
@@ -80,7 +80,7 @@ class Nginx(Source):
             request.deliverBody(BodyReceiver(d))
             b = yield d
             body = b.read()
-
+                
             metrics = self._parse_nginx_stats(body)
 
             for k,v in metrics.items():
@@ -89,5 +89,5 @@ class Nginx(Source):
                     self.createEvent('ok', 'Nginx %s' % (k), metric, prefix=k,
                         aggregation=aggr)
                 )
-            
+
         defer.returnValue(events)
