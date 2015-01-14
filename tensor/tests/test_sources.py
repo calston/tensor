@@ -7,7 +7,7 @@ from twisted.web import server, static
 
 from tensor.sources.linux import basic, process
 from tensor.sources import riak
-
+from tensor.sources import nginx
 
 class TestLinuxSources(unittest.TestCase):
     def skip_if_no_hostname(self):
@@ -134,6 +134,23 @@ class TestLinuxSources(unittest.TestCase):
         self.assertEquals(ev[4].metric, 1154168)
         self.assertEquals(ev[5].metric, 0)
 
+    def test_nginx_parse(self):
+        src = nginx.Nginx({
+            'interval': 1.0, 
+            'service': 'nginx', 
+            'ttl': 60, 
+            'hostname': 'localhost',
+            'stats_url': 'http://localhost/nginx_stats'
+        }, self._qb, None)
+
+        ngstats = """Active connections: 3
+server accepts handled requests
+ 20649 20649 686969
+Reading: 0 Writing: 1 Waiting: 2\n"""
+
+        metrics = src._parse_nginx_stats(ngstats)
+
+        self.assertEquals(metrics['handled'][0], 20649)
 
 class TestRiakSources(unittest.TestCase):
     def _qb(self, result):
