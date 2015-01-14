@@ -73,6 +73,8 @@ class Nginx(Source):
             Headers({'User-Agent': ['Tensor']}),
         )
 
+        events = []
+
         if request.length:
             d = defer.Deferred()
             request.deliverBody(BodyReceiver(d))
@@ -81,12 +83,11 @@ class Nginx(Source):
 
             metrics = self._parse_nginx_stats(body)
 
-        events = []
-        for k,v in metrics:
-            metric, aggr = v
-            events.append(
-                self.createEvent('ok', 'Nginx %s' % (k), k, prefix=k,
-                    aggregation=aggr)
-            )
+            for k,v in metrics.items():
+                metric, aggr = v
+                events.append(
+                    self.createEvent('ok', 'Nginx %s' % (k), metric, prefix=k,
+                        aggregation=aggr)
+                )
             
         defer.returnValue(events)
