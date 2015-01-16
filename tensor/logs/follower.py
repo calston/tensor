@@ -14,7 +14,7 @@ class LogFollower(object):
 
     def __init__(self, logfile, parser=None):
         self.logfile = logfile
-        self.tmp = '/tmp/%s.lf' % self.logfile.replace('/','-')
+        self.tmp = '/tmp/%s.lf' % self.logfile.lstrip('/').replace('/','-')
 
         self.readLast()
 
