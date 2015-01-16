@@ -19,6 +19,7 @@ from tensor.objects import Source
 
 from tensor.utils import BodyReceiver, fork
 from tensor.aggregators import Counter
+from tensor.logs import parsers, follower
 
 class Nginx(Source):
     """Reads Nginx stub_status
@@ -26,7 +27,7 @@ class Nginx(Source):
     **Configuration arguments:**
     
     :stats_url: URL to fetch stub_status from
-    :type method: str.
+    :type stats_url: str.
 
     **Metrics:**
 
@@ -90,3 +91,108 @@ class Nginx(Source):
             )
             
         defer.returnValue(events)
+
+class NginxLogMetrics(Source):
+    """Tails Nginx log files, parses them and returns metrics for data usage
+    and requests against other fields.
+
+    **Configuration arguments:**
+    
+    :log_format: Log format passed to parser, same as the config definition
+    :type log_format: str.
+    :file: Log file
+    :type file: str.
+
+    **Metrics:**
+
+    """
+
+    implements(ITensorSource)
+
+    # Don't allow overlapping runs
+    sync = True
+
+    def __init__(self, *a):
+        Source.__init__(self, *a)
+
+        parser = parsers.ApacheLogParser(self.config.get('log_format', 'combined'))
+
+        self.log = follower.LogFollower(self.config['file'], parser=parser.parse)
+
+        self.bucket = 0
+
+    def _aggregate_fields(self, d, row, b, field, fil=None):
+        f = row.get(field, None)
+
+        if fil:
+            f = fil(f)
+
+        if f:
+            if not (field in d):
+                d[field] = {}
+
+            if not (f in d[field]):
+                d[field][f] = [b, 1]
+            
+            else:
+                d[field][f][0] += b
+                d[field][f][1] += 1
+
+    def dumpEvents(self, ts):
+        if self.st:
+            events = [
+                self.createEvent('ok', 'Nginx bytes', self.bytes, prefix='bytes',
+                    evtime=ts),
+                self.createEvent('ok', 'Nginx requests', self.requests,
+                    prefix='requests', evtime=ts)
+            ]
+
+            for field, block in self.st.items():
+                for key, vals in block.items():
+                    bytes, requests = vals
+                    events.extend([
+                        self.createEvent('ok', 'Nginx %s %s bytes' % (field, key), bytes,
+                            prefix='%s.%s.bytes' % (field, key), evtime=ts),
+                        self.createEvent('ok', 'Nginx %s %s requests' % (field, key), requests,
+                            prefix='%s.%s.requests' % (field, key), evtime=ts)
+                    ])
+
+            self.st = {}
+
+            self.queueBack(events)
+
+    def got_line(self, line):
+        b = line.get('bytes', 0)
+        if b:
+            self.bytes += b
+        
+        self.requests += 1
+
+        t = time.mktime(line['time'].timetuple())
+
+        bucket = (int(t)/10)*10
+
+        if self.bucket:
+            if (bucket != self.bucket):
+                self.dumpEvents(float(self.bucket))
+                self.bucket = bucket
+        else:
+            self.bucket = bucket
+
+        self._aggregate_fields(self.st, line, b, 'status')
+        self._aggregate_fields(self.st, line, b, 'client')
+        self._aggregate_fields(self.st, line, b, 'user-agent',
+            fil=lambda l: l.replace('.',',')
+        )
+        self._aggregate_fields(self.st, line, b, 'request',
+            fil=lambda l: l.split()[1].split('?')[0].replace('.',',')
+        )
+
+    def get(self):
+        self.bytes = 0
+        self.requests = 0
+        self.st = {}
+
+        self.log.get_fn(self.got_line)
+
+        self.dumpEvents(float(self.bucket))
