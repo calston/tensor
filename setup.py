@@ -21,6 +21,7 @@ setup(
         'PyYaml',
         'protobuf',
         'construct',
+        'pysnmp',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
