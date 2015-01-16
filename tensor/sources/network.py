@@ -80,6 +80,8 @@ class HTTP(Source):
 class Ping(Source):
     """Performs an Ping checks against a destination
 
+    This is a horrible implementation which forks to `ping`
+
     **Configuration arguments:**
     
     :destination: Host name or IP address to ping

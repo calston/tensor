@@ -73,6 +73,10 @@ Extending the above example to create a simple flip-flop metric event::
 You could then place this in a Python module like `hello.py` and as long as it's
 in the Python path for Tensor it can be used as a source with `hello.HelloWorld`
 
+A list of events can also be returned but be careful of overwhelming the output
+buffer, and if you need to produce lots of metrics it may be worthwhile to
+return nothing from `get` and call `self.queueBack` as needed.
+
 Handling asynchronous tasks
 ===========================
 
