@@ -10,11 +10,11 @@ Tensor can be installed from PyPi with pip ::
 
 This will also install Twisted, protobuf and PyYAML
 
-Or you can use the .deb package ::
+Or you can use the .deb package. Let the latest release from https://github.com/calston/tensor/releases/latest ::
     
     $ aptitude install python-twisted python-protobuf python-yaml
-    $ wget https://github.com/calston/tensor/releases/download/0.0.7/tensor_0.0.7_amd64.deb
-    $ dpkg -i tensor_0.0.7_amd64.deb
+    $ wget https://github.com/calston/tensor/releases/download/0.2.0/tensor_0.2.0_amd64.deb
+    $ dpkg -i tensor_0.2.0_amd64.deb
 
 This also gives you an init script and default config in /etc/tensor/
 
