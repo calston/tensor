@@ -125,10 +125,9 @@ class NginxLogMetrics(Source):
     def _aggregate_fields(self, d, row, b, field, fil=None):
         f = row.get(field, None)
 
-        if fil:
-            f = fil(f)
-
         if f:
+            if fil:
+                f = fil(f)
             if not (field in d):
                 d[field] = {}
 
