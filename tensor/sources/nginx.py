@@ -103,9 +103,11 @@ class NginxLogMetrics(Source):
     :type log_format: str.
     :file: Log file
     :type file: str.
-    :max_lines: Maximum number of log lines to read per interval, good to 
-                prevent overwhelming Tensor when backfilling large logs
+    :max_lines: Maximum number of log lines to read per interval to prevent
+                overwhelming Tensor when reading large logs (default 2000)
     :type max_lines: int.
+    :resolution: Aggregate bucket resolution in seconds (default 10)
+    :type resolution: int.
 
     **Metrics:**
 
@@ -123,7 +125,8 @@ class NginxLogMetrics(Source):
 
         self.log = follower.LogFollower(self.config['file'], parser=parser.parse)
 
-        self.max_lines = int(self.config.get('max_lines', 0))
+        self.max_lines = int(self.config.get('max_lines', 2000))
+        self.bucket_res = int(self.config.get('resolution', 10))
 
         self.bucket = 0
 
@@ -146,10 +149,10 @@ class NginxLogMetrics(Source):
     def dumpEvents(self, ts):
         if self.st:
             events = [
-                self.createEvent('ok', 'Nginx bytes', self.bytes, prefix='bytes',
+                self.createEvent('ok', 'Nginx bytes', self.bytes, prefix='total_bytes',
                     evtime=ts),
                 self.createEvent('ok', 'Nginx requests', self.requests,
-                    prefix='requests', evtime=ts)
+                    prefix='total_requests', evtime=ts)
             ]
 
             for field, block in self.st.items():
@@ -177,7 +180,8 @@ class NginxLogMetrics(Source):
 
         t = time.mktime(line['time'].timetuple())
 
-        bucket = (int(t)/10)*10
+        # Calculate the time bucket for this line
+        bucket = (int(t)/self.bucket_res)*self.bucket_res
 
         if self.bucket:
             if (bucket != self.bucket):
@@ -187,7 +191,7 @@ class NginxLogMetrics(Source):
             self.bucket = bucket
 
         self._aggregate_fields(self.st, line, b, 'status')
-        #self._aggregate_fields(self.st, line, b, 'client')
+        self._aggregate_fields(self.st, line, b, 'client')
         self._aggregate_fields(self.st, line, b, 'user-agent',
             fil=lambda l: l.replace('.',',')
         )
