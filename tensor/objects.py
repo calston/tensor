@@ -24,9 +24,11 @@ class Event(object):
 
     :tags: List of tag strings
     :hostname: Hostname for the event (defaults to system fqdn)
+    :aggregation: Aggregation function
+    :evtime: Event timestamp override
     """
     def __init__(self, state, service, description, metric, ttl, tags=[],
-            hostname=None, aggregation=None):
+            hostname=None, aggregation=None, evtime=None):
         self.state = state
         self.service = service
         self.description = description
@@ -34,8 +36,11 @@ class Event(object):
         self.ttl = ttl
         self.tags = tags
         self.aggregation = aggregation
-
-        self.time = time.time()
+        
+        if evtime:
+            self.time = evtime
+        else:
+            self.time = time.time()
         if hostname:
             self.hostname = hostname
         else:
@@ -118,6 +123,8 @@ class Source(object):
     :tensor: A TensorService object for interacting with the queue manager
     """
 
+    sync = False
+
     def __init__(self, config, queueBack, tensor):
         """Consturct a Source object
 
@@ -142,6 +149,8 @@ class Source(object):
 
         self.queueBack = queueBack
 
+        self.running = False
+
     def startTimer(self):
         """Starts the timer for this source"""
         self.t.start(self.inter)
@@ -153,6 +162,12 @@ class Source(object):
         
         Returns a deferred"""
 
+        if self.sync:
+            if self.running:
+                defer.returnValue(None)
+
+        self.running = True
+
         try:
             event = yield defer.maybeDeferred(self.get)
             if self.config.get('debug', False):
@@ -163,8 +178,10 @@ class Source(object):
         except Exception, e:
             log.msg("[%s] Unhandled error: %s" % (self.service, e))
 
+        self.running = False
+
     def createEvent(self, state, description, metric, prefix=None,
-            hostname=None, aggregation=None):
+            hostname=None, aggregation=None, evtime=None):
         """Creates an Event object from the Source configuration"""
         if prefix:
             service_name = self.service + "." + prefix
@@ -172,7 +189,8 @@ class Source(object):
             service_name = self.service
 
         return Event(state, service_name, description, metric, self.ttl,
-            hostname = hostname or self.hostname, aggregation=aggregation
+            hostname=hostname or self.hostname, aggregation=aggregation,
+            evtime=evtime
         )
 
     def get(self):
