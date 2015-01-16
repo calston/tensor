@@ -7,6 +7,21 @@ from tensor.objects import Output
 
 
 class RiemannTCP(Output):
+    """Riemann TCP output
+
+    **Configuration arguments:**
+
+    :server: Riemann server hostname (default: localhost)
+    :type server: str.
+    :port: Riemann server port (default: 5555)
+    :type port: int.
+    :maxrate: Maximum de-queue rate (0 is no limit)
+    :type maxrate: int.
+    :interval: De-queue interval in seconds (default: 1.0)
+    :type interval: float.
+    :pressure: Maximum backpressure (-1 is no limit)
+    :type pressure: int.
+    """
     def __init__(self, *a):
         Output.__init__(self, *a)
         self.events = []
@@ -90,6 +105,16 @@ class RiemannTCP(Output):
         self.events.extend(events)
 
 class RiemannUDP(Output):
+    """Riemann UDP output (spray-and-pray mode)
+
+    **Configuration arguments:**
+
+    :server: Riemann server IP address (default: 127.0.0.1)
+    :type server: str.
+    :port: Riemann server port (default: 5555)
+    :type port: int.
+    """
+
     def __init__(self, *a):
         Output.__init__(self, *a)
         self.protocol = None
