@@ -111,6 +111,12 @@ class NginxLogMetrics(Source):
 
     **Metrics:**
 
+    :(service name).total_bytes: Bytes total for all requests
+    :(service name).total_requests: Total request count
+    :(service name).stats.(code).(requests|bytes): Metrics by status code
+    :(service name).user-agent.(agent).(requests|bytes): Metrics by user agent
+    :(service name).client.(ip).(requests|bytes): Metrics by client IP
+    :(service name).request.(request path).(requests|bytes): Metrics by request path
     """
 
     implements(ITensorSource)
