@@ -14,7 +14,7 @@ class LogFollower(object):
 
     def __init__(self, logfile, parser=None):
         self.logfile = logfile
-        self.tmp = '/tmp/%s.lf' % self.logfile.lstrip('/').replace('/','-')
+        self.tmp = '/var/lib/tensor/%s.lf' % self.logfile.lstrip('/').replace('/','-')
 
         self.readLast()
 
@@ -75,7 +75,7 @@ class LogFollower(object):
 
                 fn(line)
 
-                self.storeLast()
+        self.storeLast()
 
         fi.close()
 
