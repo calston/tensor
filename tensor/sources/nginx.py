@@ -103,6 +103,9 @@ class NginxLogMetrics(Source):
     :type log_format: str.
     :file: Log file
     :type file: str.
+    :max_lines: Maximum number of log lines to read per interval, good to 
+                prevent overwhelming Tensor when backfilling large logs
+    :type max_lines: int.
 
     **Metrics:**
 
@@ -119,6 +122,8 @@ class NginxLogMetrics(Source):
         parser = parsers.ApacheLogParser(self.config.get('log_format', 'combined'))
 
         self.log = follower.LogFollower(self.config['file'], parser=parser.parse)
+
+        self.max_lines = int(self.config.get('max_lines', 0))
 
         self.bucket = 0
 
@@ -182,7 +187,7 @@ class NginxLogMetrics(Source):
             self.bucket = bucket
 
         self._aggregate_fields(self.st, line, b, 'status')
-        self._aggregate_fields(self.st, line, b, 'client')
+        #self._aggregate_fields(self.st, line, b, 'client')
         self._aggregate_fields(self.st, line, b, 'user-agent',
             fil=lambda l: l.replace('.',',')
         )
@@ -195,6 +200,6 @@ class NginxLogMetrics(Source):
         self.requests = 0
         self.st = {}
 
-        self.log.get_fn(self.got_line)
+        self.log.get_fn(self.got_line, max_lines=self.max_lines)
 
         self.dumpEvents(float(self.bucket))

@@ -38,7 +38,7 @@ class LogFollower(object):
             self.lastSize = 0
             self.lastInode = 0
 
-    def get_fn(self, fn):
+    def get_fn(self, fn, max_lines=None):
         """Passes each parsed log line to `fn`
         This is a better idea than storing a giant log file in memory
         """
@@ -57,7 +57,15 @@ class LogFollower(object):
 
         self.lastInode = stat.st_ino
 
+        lines = 0
+
         for i in fi:
+            lines += 1
+            if max_lines and (lines > max_lines):
+                self.storeLast()
+                fi.close()
+                return 
+
             if '\n' in i:
                 self.lastSize += len(i)
                 if self.parser:
@@ -69,11 +77,13 @@ class LogFollower(object):
 
                 self.storeLast()
 
-    def get(self):
+        fi.close()
+
+    def get(self, max_lines=None):
         """Returns a big list of all log lines since the last run
         """
         rows = []
 
-        self.get_fn(lambda row: rows.append(row))
+        self.get_fn(lambda row: rows.append(row), max_lines=max_lines)
 
         return rows
