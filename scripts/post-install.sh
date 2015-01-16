@@ -34,6 +34,12 @@ sources:
 EOL
 fi
 
+if [ ! -d /var/lib/tensor ];
+then
+    mkdir -p /var/lib/tensor
+    cp /tmp/*.lf /var/lib/tensor/
+fi
+
 update-rc.d tensor defaults
 service tensor status >/dev/null 2>&1
 
