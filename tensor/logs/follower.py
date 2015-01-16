@@ -12,9 +12,10 @@ class LogFollower(object):
     :parser: Optional parser method for log lines
     """
 
-    def __init__(self, logfile, parser=None):
+    def __init__(self, logfile, parser=None, tmp_path="/var/lib/tensor/"):
         self.logfile = logfile
-        self.tmp = '/var/lib/tensor/%s.lf' % self.logfile.lstrip('/').replace('/','-')
+        self.tmp = os.path.join(tmp_path,
+            '%s.lf' % self.logfile.lstrip('/').replace('/','-'))
 
         self.readLast()
 

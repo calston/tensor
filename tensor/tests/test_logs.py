@@ -19,7 +19,7 @@ class TestLogs(unittest.TestCase):
         log.write('foo\nbar\n')
         log.flush()
 
-        f = follower.LogFollower('test.log')
+        f = follower.LogFollower('test.log', tmp_path=".")
 
         r = f.get()
 
