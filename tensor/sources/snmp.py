@@ -1,3 +1,11 @@
+"""
+.. module:: snmp
+   :platform: Unix
+   :synopsis: A source module for polling SNMP
+
+.. moduleauthor:: Colin Alston <colin@imcol.in>
+"""
+
 import time
 
 from twisted.internet import reactor, defer
