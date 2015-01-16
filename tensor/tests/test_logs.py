@@ -10,7 +10,7 @@ class TestLogs(unittest.TestCase):
  
     def test_logfollow(self):
         try:
-            os.unlink('/var/lib/tensor/test.log.lf')
+            os.unlink('test.log.lf')
             os.unlink('test.log')
         except:
             pass

@@ -9,6 +9,8 @@ from tensor.protocol.sflow import protocol
 from tensor.protocol.sflow.protocol import flows, counters
 
 class DatagramReceiver(DatagramProtocol):
+    """DatagramReceiver for sFlow packets
+    """
     def datagramReceived(self, data, (host, port)):
         sflow = protocol.Sflow(data, host)
 

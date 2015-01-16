@@ -136,21 +136,21 @@ class NginxLogMetrics(Source):
 
         self.bucket = 0
 
-    def _aggregate_fields(self, d, row, b, field, fil=None):
+    def _aggregate_fields(self, row, b, field, fil=None):
         f = row.get(field, None)
 
         if f:
             if fil:
                 f = fil(f)
-            if not (field in d):
-                d[field] = {}
+            if not (field in self.st):
+                self.st[field] = {}
 
-            if not (f in d[field]):
-                d[field][f] = [b, 1]
+            if not (f in self.st[field]):
+                self.st[field][f] = [b, 1]
             
             else:
-                d[field][f][0] += b
-                d[field][f][1] += 1
+                self.st[field][f][0] += b
+                self.st[field][f][1] += 1
 
     def dumpEvents(self, ts):
         if self.st:
@@ -196,12 +196,12 @@ class NginxLogMetrics(Source):
         else:
             self.bucket = bucket
 
-        self._aggregate_fields(self.st, line, b, 'status')
-        self._aggregate_fields(self.st, line, b, 'client')
-        self._aggregate_fields(self.st, line, b, 'user-agent',
+        self._aggregate_fields(line, b, 'status')
+        self._aggregate_fields(line, b, 'client')
+        self._aggregate_fields(line, b, 'user-agent',
             fil=lambda l: l.replace('.',',')
         )
-        self._aggregate_fields(self.st, line, b, 'request',
+        self._aggregate_fields(line, b, 'request',
             fil=lambda l: l.split()[1].split('?')[0].replace('.',',')
         )
 

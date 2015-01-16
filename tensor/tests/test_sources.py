@@ -152,6 +152,64 @@ Reading: 0 Writing: 1 Waiting: 2\n"""
 
         self.assertEquals(metrics['handled'][0], 20649)
 
+    def test_nginx_log(self):
+        try:
+            os.unlink('foo.log.lf')
+            os.unlink('foo.log')
+        except:
+            pass
+
+        events = []
+
+        def qb(ev):
+            events.append(ev)
+
+        f = open('foo.log', 'wt')
+        f.write('192.168.0.1 - - [16/Jan/2015:16:31:29 +0200] "GET /foo HTTP/1.1" 200 210 "-" "My Browser"\n')
+        f.write('192.168.0.1 - - [16/Jan/2015:16:51:29 +0200] "GET /foo HTTP/1.1" 200 410 "-" "My Browser"\n')
+        f.flush()
+
+        src = nginx.NginxLogMetrics({
+            'interval': 1.0,
+            'service': 'nginx',
+            'ttl': 60,
+            'hostname': 'localhost',
+            'log_format': 'combined',
+            'file': 'foo.log'
+        }, qb, None)
+
+        src.log.tmp = 'foo.log.lf'
+
+        src.get()
+
+        ev1 = events[0]
+        ev2 = events[1]
+
+        for i in ev1:
+            if i.service=='nginx.client.192.168.0.1.bytes':
+                self.assertEquals(i.metric, 210)
+
+        for i in ev2:
+            if i.service=='nginx.client.192.168.0.1.bytes':
+                self.assertEquals(i.metric, 410)
+
+        events = []
+
+        f.write('192.168.0.1 - - [16/Jan/2015:17:10:31 +0200] "GET /foo HTTP/1.1" 200 410 "-" "My Browser"\n')
+        f.write('192.168.0.1 - - [16/Jan/2015:17:10:34 +0200] "GET /bar HTTP/1.1" 200 410 "-" "My Browser"\n')
+        f.close()
+
+        src.get()
+
+        for i in events[0]:
+            if i.service=='nginx.client.192.168.0.1.requests':
+                self.assertEquals(i.metric, 2)
+            if i.service=='nginx.user-agent.My Browser.bytes':
+                self.assertEquals(i.metric, 820)
+
+            if i.service=='nginx.request./foo.bytes':
+                self.assertEquals(i.metric, 410)
+
 class TestRiakSources(unittest.TestCase):
     def _qb(self, result):
         pass
