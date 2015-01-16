@@ -25,6 +25,15 @@ from pysnmp.proto import rfc1905, rfc1902
 
 class SNMPConnection(object):
     """A wrapper class for PySNMP functions
+
+    **Arguments:**
+
+    :host: SNMP agent host
+    :type host: str.
+    :port: SNMP port
+    :type port: int.
+    :community: SNMP read community
+    :type community: str.
     """
     
     def __init__(self, host, port, community):
