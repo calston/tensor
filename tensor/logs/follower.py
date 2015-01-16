@@ -3,13 +3,10 @@ import os
 class LogFollower(object):
     """Provides a class for following log files between runs
 
-    **Arguments:**
-
-    :logfile: Full path to logfile
-
-    **Keyword arguments:**
-
-    :parser: Optional parser method for log lines
+    :param logfile: Full path to logfile
+    :type logfile: str
+    :param parser: Optional parser method for log lines
+    :type parser: str
     """
 
     def __init__(self, logfile, parser=None, tmp_path="/var/lib/tensor/"):

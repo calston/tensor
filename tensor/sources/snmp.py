@@ -26,14 +26,14 @@ from pysnmp.proto import rfc1905, rfc1902
 class SNMPConnection(object):
     """A wrapper class for PySNMP functions
 
-    **Arguments:**
-
-    :host: SNMP agent host
+    :param host: SNMP agent host
     :type host: str.
-    :port: SNMP port
+    :param port: SNMP port
     :type port: int.
-    :community: SNMP read community
+    :param community: SNMP read community
     :type community: str.
+
+    (This is not a source and you shouldn't try to use it as one)
     """
     
     def __init__(self, host, port, community):
@@ -100,11 +100,11 @@ class SNMP(Source):
 
     **Configuration arguments:**
 
-    :ip: SNMP agent host (default: 127.0.0.1)
+    :param ip: SNMP agent host (default: 127.0.0.1)
     :type ip: str.
-    :port: SNMP port (default: 161)
+    :param port: SNMP port (default: 161)
     :type port: int.
-    :community: SNMP read community
+    :param community: SNMP read community
     :type community: str.
     """
 
@@ -182,11 +182,11 @@ class SNMPCisco837(SNMP):
 
     **Configuration arguments:**
 
-    :ip: SNMP agent host (default: 127.0.0.1)
+    :param ip: SNMP agent host (default: 127.0.0.1)
     :type ip: str.
-    :port: SNMP port (default: 161)
+    :param port: SNMP port (default: 161)
     :type port: int.
-    :community: SNMP read community
+    :param community: SNMP read community
     :type community: str.
     """
 

@@ -9,11 +9,10 @@ class ApacheLogParser:
 
     Adapted from http://code.google.com/p/apachelog
 
-    **Arguments:**
-
-    :format: Apache log format definition eg
+    :param format: Apache log format definition eg
              r'%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"'
              or one of 'common', 'vhcommon' or 'combined'
+    :type format: str
     """
     def __init__(self, format):
         formats = {

@@ -175,9 +175,9 @@ class sFlow(Source):
 
     **Configuration arguments:**
     
-    :port: UDP port to listen on
+    :param port: UDP port to listen on
     :type port: int.
-    :dnslookup: Enable reverse DNS lookup for device IPs (default: True)
+    :param dnslookup: Enable reverse DNS lookup for device IPs (default: True)
     :type dnslookup: bool.
 
     **Metrics:**

@@ -8,6 +8,9 @@ from twisted.names import client
 
 
 class Resolver(object):
+    """Helper class for DNS resolution
+    """
+
     def __init__(self):
         self.recs = {}
         
@@ -93,18 +96,13 @@ def fork(executable, args=(), env={}, path=None, timeout=3600):
     """fork
     Provides a deferred wrapper function with a timeout function
 
-    **Arguments:**
-
-    :executable: Executable
+    :param executable: Executable
     :type executable: str.
-
-    **Keyword arguments:**
-
-    :args: Tupple of arguments
+    :param args: Tupple of arguments
     :type args: tupple.
-    :env: Environment dictionary
+    :param env: Environment dictionary
     :type env: dict.
-    :timeout: Kill the child process if timeout is exceeded
+    :param timeout: Kill the child process if timeout is exceeded
     :type timeout: int.
     """
     d = defer.Deferred()

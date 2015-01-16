@@ -25,9 +25,9 @@ class RiakStats(Source):
 
     **Configuration arguments:**
 
-    :url: Riak stats URL
+    :param url: Riak stats URL
     :type url: str.
-    :useragent: User-Agent header to use
+    :param useragent: User-Agent header to use
     :type useragent: str.
 
     **Metrics:**

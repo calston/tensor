@@ -24,11 +24,11 @@ class HTTP(Source):
 
     **Configuration arguments:**
     
-    :method: HTTP request method to use
+    :param method: HTTP request method to use
     :type method: str.
-    :match: A text string to match in the document when it is correct
+    :param match: A text string to match in the document when it is correct
     :type match: str.
-    :useragent: User-Agent header to use
+    :param useragent: User-Agent header to use
     :type useragent: str.
 
     **Metrics:**
@@ -84,8 +84,8 @@ class Ping(Source):
 
     **Configuration arguments:**
     
-    :destination: Host name or IP address to ping
-    :type method: str.
+    :param destination: Host name or IP address to ping
+    :type destination: str.
 
     **Metrics:**
 

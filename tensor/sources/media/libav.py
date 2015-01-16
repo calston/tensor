@@ -15,7 +15,7 @@ class DarwinRTSP(Source):
 
     **Configuration arguments:**
 
-    :destination: Host name or IP address to check
+    :param destination: Host name or IP address to check
     :type method: str.
 
     **Metrics:**

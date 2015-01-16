@@ -61,15 +61,15 @@ class MuninNode(Source):
 
     **Configuration arguments:**
     
-    :host: munin-node hostname (probably localhost)
+    :param host: munin-node hostname (probably localhost)
     :type host: str.
-    :port: munin-node port (probably 4949)
+    :param port: munin-node port (probably 4949)
     :type port: int.
     
     **Metrics:**
 
-    :(service name).(plugin name).(keys...): A dot separated tree of munin
-                                             plugin keys
+    :(service name).(plugin name).(keys...): A dot separated tree of
+                                             munin plugin keys
     """
 
     implements(ITensorSource)

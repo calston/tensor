@@ -14,7 +14,7 @@ class Queues(Source):
 
     **Configuration arguments:**
 
-    :vhost: Vhost name
+    :param vhost: Vhost name
     :type vhost: str.
 
     **Metrics:**

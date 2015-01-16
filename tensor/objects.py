@@ -13,19 +13,14 @@ class Event(object):
     All sources pass these to the queue, which form a proxy object
     to create protobuf Event objects
 
-    **Arguments:**
-
-    :state: Some sort of string < 255 chars describing the state
-    :service: The service name for this event
-    :description: A description for the event, ie. "My house is on fire!"
-    :metric: int or float metric for this event
-
-    **Keyword arguments:**
-
-    :tags: List of tag strings
-    :hostname: Hostname for the event (defaults to system fqdn)
-    :aggregation: Aggregation function
-    :evtime: Event timestamp override
+    :param state: Some sort of string < 255 chars describing the state
+    :param service: The service name for this event
+    :param description: A description for the event, ie. "My house is on fire!"
+    :param metric: int or float metric for this event
+    :param tags: List of tag strings
+    :param hostname: Hostname for the event (defaults to system fqdn)
+    :param aggregation: Aggregation function
+    :param evtime: Event timestamp override
     """
     def __init__(self, state, service, description, metric, ttl, tags=[],
             hostname=None, aggregation=None, evtime=None):
@@ -75,19 +70,11 @@ class Output(object):
     Outputs can inherit this object which provides a construct
     for a working output
 
-    **Arguments:**
-
-    :config: Dictionary config for this queue (usually read from the
+    :param config: Dictionary config for this queue (usually read from the
              yaml configuration)
-    :tensor: A TensorService object for interacting with the queue manager
+    :param tensor: A TensorService object for interacting with the queue manager
     """
     def __init__(self, config, tensor):
-        """Consturct a Output object
-
-        Arguments:
-        config -- Dictionary config for this output
-        tensor -- A TensorService object for interacting with the queue manager
-        """
         self.config = config
         self.tensor = tensor
 
@@ -115,25 +102,15 @@ class Source(object):
     Sources can inherit this object which provides a number of
     utility methods.
 
-    **Arguments:**
-
-    :config: Dictionary config for this queue (usually read from the
+    :param config: Dictionary config for this queue (usually read from the
              yaml configuration)
-    :queueBack: A callback method to recieve a list of Event objects
-    :tensor: A TensorService object for interacting with the queue manager
+    :param queueBack: A callback method to recieve a list of Event objects
+    :param tensor: A TensorService object for interacting with the queue manager
     """
 
     sync = False
 
     def __init__(self, config, queueBack, tensor):
-        """Consturct a Source object
-
-        Arguments:
-        config -- Dictionary config for this source
-        queueBack -- Callback method for events originating from this source
-                     called on config['interval']
-        tensor -- A TensorService object for interacting with the queue manager
-        """
         self.config = config
         self.t = task.LoopingCall(self.tick)
 

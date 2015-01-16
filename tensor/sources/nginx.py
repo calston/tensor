@@ -26,7 +26,7 @@ class Nginx(Source):
 
     **Configuration arguments:**
     
-    :stats_url: URL to fetch stub_status from
+    :param stats_url: URL to fetch stub_status from
     :type stats_url: str.
 
     **Metrics:**
@@ -99,14 +99,16 @@ class NginxLogMetrics(Source):
 
     **Configuration arguments:**
     
-    :log_format: Log format passed to parser, same as the config definition
+    :param log_format: Log format passed to parser, same as the config
+                       definition
     :type log_format: str.
-    :file: Log file
+    :param file: Log file
     :type file: str.
-    :max_lines: Maximum number of log lines to read per interval to prevent
-                overwhelming Tensor when reading large logs (default 2000)
+    :param max_lines: Maximum number of log lines to read per interval to
+                      prevent overwhelming Tensor when reading large logs
+                      (default 2000)
     :type max_lines: int.
-    :resolution: Aggregate bucket resolution in seconds (default 10)
+    :param resolution: Aggregate bucket resolution in seconds (default 10)
     :type resolution: int.
 
     **Metrics:**

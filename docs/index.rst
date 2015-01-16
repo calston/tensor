@@ -27,6 +27,7 @@ API Documentation:
 
     api/tensor.rst
     api/protocol.rst
+    api/logs.rst
     api/sources.rst
     api/outputs.rst
 
