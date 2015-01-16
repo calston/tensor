@@ -9,6 +9,7 @@ before_install:
     - sudo apt-get install openjdk-7-jre
     - sudo dpkg -i riemann_0.2.6_all.deb
     - sudo /etc/init.d/riemann start
+    - mkdir -p /var/lib/tensor
 script:
     - trial tensor
 
