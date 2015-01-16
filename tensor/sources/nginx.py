@@ -159,6 +159,8 @@ class NginxLogMetrics(Source):
                     ])
 
             self.st = {}
+            self.bytes = 0
+            self.requests = 0
 
             self.queueBack(events)
 
