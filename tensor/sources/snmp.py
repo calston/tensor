@@ -1,7 +1,7 @@
 """
 .. module:: snmp
    :platform: Unix
-   :synopsis: A source module for polling SNMP
+   :synopsis: A source module for polling SNMP. Requires PySNMP4
 
 .. moduleauthor:: Colin Alston <colin@imcol.in>
 """
