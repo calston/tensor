@@ -39,7 +39,7 @@ class Queues(Source):
     def get(self):
 
         out, err, code = yield fork(self.clipath,
-            args=('-n', self.db, 'llen', self.queue,)
+            args=('-n', str(self.db), 'llen', self.queue,)
         )
 
         events = []
