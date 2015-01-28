@@ -8,6 +8,7 @@ from twisted.python import log
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 from tensor.utils import fork
+from tensor.aggregators import Counter
 
 class Queues(Source):
     """Query llen from redis-cli
@@ -24,6 +25,7 @@ class Queues(Source):
     **Metrics:**
 
     :(service_name): Queue length
+    :(service_name): Queue rate
     """
     implements(ITensorSource)
 
@@ -46,9 +48,12 @@ class Queues(Source):
         if code == 0:
             val = int(out.strip('\n').split()[-1])
 
-            defer.returnValue(
-                self.createEvent('ok', '%s queue length' % self.queue, val)
-            )
+            defer.returnValue([
+                self.createEvent('ok', '%s queue length' % self.queue, val),
+
+                self.createEvent('ok', 'Queue rate', val, prefix='rate',
+                    aggregation=Counter)
+            ])
 
         else:
             err = 'Error running %s: %s' % (self.clipath, repr(err))
