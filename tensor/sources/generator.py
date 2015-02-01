@@ -58,6 +58,4 @@ class Function(Source):
             'x': self.x
         })
 
-        print val
-    
         return self.createEvent('ok', 'Sine wave', val)
