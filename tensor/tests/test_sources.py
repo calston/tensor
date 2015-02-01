@@ -152,6 +152,46 @@ Reading: 0 Writing: 1 Waiting: 2\n"""
 
         self.assertEquals(metrics['handled'][0], 20649)
 
+    def test_nginx_log_nohistory(self):
+        try:
+            os.unlink('foo.log.lf')
+            os.unlink('foo.log')
+        except:
+            pass
+
+        events = []
+
+        def qb(src, ev):
+            events.append(ev)
+
+        f = open('foo.log', 'wt')
+        f.write('192.168.0.1 - - [16/Jan/2015:16:31:29 +0200] "GET /foo HTTP/1.1" 200 210 "-" "My Browser"\n')
+        f.write('192.168.0.1 - - [16/Jan/2015:16:51:29 +0200] "GET /foo HTTP/1.1" 200 410 "-" "My Browser"\n')
+        f.flush()
+
+        src = nginx.NginxLogMetrics({
+            'interval': 1.0,
+            'service': 'nginx',
+            'ttl': 60,
+            'hostname': 'localhost',
+            'log_format': 'combined',
+            'file': 'foo.log'
+        }, qb, None)
+
+        src.log.tmp = 'foo.log2.lf'
+
+        src.get()
+
+        self.assertEquals(len(events), 0)
+
+        f.write('192.168.0.1 - - [16/Jan/2015:17:31:29 +0200] "GET /foo HTTP/1.1" 200 210 "-" "My Browser"\n')
+        f.write('192.168.0.1 - - [16/Jan/2015:17:51:29 +0200] "GET /foo HTTP/1.1" 200 410 "-" "My Browser"\n')
+        f.flush()
+
+        src.get()
+
+        self.assertEquals(len(events)>0, True)
+
     def test_nginx_log(self):
         try:
             os.unlink('foo.log.lf')
@@ -175,6 +215,7 @@ Reading: 0 Writing: 1 Waiting: 2\n"""
             'ttl': 60,
             'hostname': 'localhost',
             'log_format': 'combined',
+            'history': True,
             'file': 'foo.log'
         }, qb, None)
 

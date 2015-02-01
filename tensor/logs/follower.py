@@ -9,10 +9,12 @@ class LogFollower(object):
     :type parser: str
     """
 
-    def __init__(self, logfile, parser=None, tmp_path="/var/lib/tensor/"):
+    def __init__(self, logfile, parser=None, tmp_path="/var/lib/tensor/", history=False):
         self.logfile = logfile
         self.tmp = os.path.join(tmp_path,
             '%s.lf' % self.logfile.lstrip('/').replace('/','-'))
+
+        self.history = history
 
         self.readLast()
 
@@ -33,8 +35,14 @@ class LogFollower(object):
             self.lastSize = int(ls)
             self.lastInode = int(li)
         else:
-            self.lastSize = 0
-            self.lastInode = 0
+            if self.history:
+                self.lastSize = 0
+                self.lastInode = 0
+            else:
+                # Don't re-read the entire file
+                stat = os.stat(self.logfile)
+                self.lastSize = stat.st_size
+                self.lastInode = stat.st_ino
 
     def get_fn(self, fn, max_lines=None):
         """Passes each parsed log line to `fn`

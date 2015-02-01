@@ -110,6 +110,9 @@ class NginxLogMetrics(Source):
     :type max_lines: int.
     :param resolution: Aggregate bucket resolution in seconds (default 10)
     :type resolution: int.
+    :param history: Read the entire file from scratch if we've never seen
+                    it (default false)
+    :type history: bool.
 
     **Metrics:**
 
@@ -131,7 +134,10 @@ class NginxLogMetrics(Source):
 
         parser = parsers.ApacheLogParser(self.config.get('log_format', 'combined'))
 
-        self.log = follower.LogFollower(self.config['file'], parser=parser.parse)
+        history = self.config.get('history', False)
+
+        self.log = follower.LogFollower(self.config['file'],
+            parser=parser.parse, history=history)
 
         self.max_lines = int(self.config.get('max_lines', 2000))
         self.bucket_res = int(self.config.get('resolution', 10))
