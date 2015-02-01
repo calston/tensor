@@ -32,6 +32,7 @@ class TensorService(service.Service):
 
         self.factory = None
         self.protocol = None
+        self.watchdog = None
 
         self.config = config
 
@@ -135,19 +136,26 @@ class TensorService(service.Service):
 
         return sourceObj(source, self.sendEvent, self)
 
+    def setupTriggers(self, source, sobj):
+        if source.get('critical'):
+            self.critical[sobj] = [
+                (re.compile(k), v) for k, v in source['critical'].items()
+            ]
+
+        if source.get('warning'):
+            self.warn[sobj] = [
+                (re.compile(k), v) for k, v in source['warning'].items()
+            ]
+
     def setupSources(self, config):
         """Sets up source objects from the given config"""
         sources = config.get('sources', [])
 
         for source in sources:
+            src = self.createSource(source)
+            self.setupTriggers(source, src)
 
-            for k, v in source.get('critical', {}).items():
-                self.critical[re.compile(k)] = v
-                
-            for k, v in source.get('warning', {}).items():
-                self.warn[re.compile(k)] = v
-
-            self.sources.append(self.createSource(source))
+            self.sources.append(src)
 
     def _aggregateQueue(self, events):
         # Handle aggregation for each event
@@ -167,16 +175,16 @@ class TensorService(service.Service):
 
         return queue
 
-    def setStates(self, events):
-        for ev in events:
+    def setStates(self, source, queue):
+        for ev in queue:
             if ev.state == 'ok':
-                for k, v in self.warn.items():
+                for k, v in self.warn.get(source, []):
                     if k.match(ev.service):
                         s = eval("service %s" % v, {'service': ev.metric})
                         if s:
                             ev.state = 'warning'
 
-                for k, v in self.critical.items():
+                for k, v in self.critical.get(source, []):
                     if k.match(ev.service):
                         s = eval("service %s" % v, {'service': ev.metric})
                         if s:
@@ -194,7 +202,8 @@ class TensorService(service.Service):
             events = [events]
     
         queue = self._aggregateQueue(events)
-        self.setStates(queue)
+        if (source in self.critical) or (source in self.warn):
+            self.setStates(source, queue)
 
         for output in self.outputs:
             if self.debug:
@@ -271,6 +280,9 @@ class TensorService(service.Service):
     @defer.inlineCallbacks
     def stopService(self):
         self.running = 0
+
+        if self.watchdog:
+            self.watchdog.stop()
 
         for output in self.outputs:
             yield defer.maybeDeferred(output.stop)

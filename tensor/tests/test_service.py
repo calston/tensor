@@ -109,7 +109,7 @@ class TestService(unittest.TestCase):
         [] = yield factory.wait_for_messages(0)
         event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0,
                       hostname='localhost')
-        service.sendEvent(event)
+        service.sendEvent(None, event)
         [msg] = yield factory.wait_for_messages(1)
         [event] = msg.events
         self.assertEqual(event.description, 'Sky has not fallen')
@@ -125,7 +125,7 @@ class TestService(unittest.TestCase):
         [] = yield factory.wait_for_messages(0)
         event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0,
                       hostname='localhost')
-        service.sendEvent(event)
+        service.sendEvent(None, event)
         [msg] = yield factory.wait_for_messages(1)
         [event] = msg.events
         self.assertEqual(event.description, 'Sky has not fallen')
@@ -139,7 +139,7 @@ class TestService(unittest.TestCase):
         [_] = yield factory.wait_for_messages(1)
         event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0,
                       hostname='localhost')
-        service.sendEvent(event)
+        service.sendEvent(None, event)
         [_, msg2] = yield factory.wait_for_messages(2)
         [event] = msg.events
         self.assertEqual(event.description, 'Sky has not fallen')
@@ -201,7 +201,7 @@ class TestService(unittest.TestCase):
         ev3 = Event('ok', 'network.foo.tx_bytes', 'net1', 200, 1,
             hostname='localhost')
         
-        service.setStates([ev1, ev2, ev3])
+        service.setStates(service.sources[0], [ev1, ev2, ev3])
 
         self.assertEqual(ev1.state, 'ok')
         self.assertEqual(ev2.state, 'critical')

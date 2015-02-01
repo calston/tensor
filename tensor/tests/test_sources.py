@@ -161,7 +161,7 @@ Reading: 0 Writing: 1 Waiting: 2\n"""
 
         events = []
 
-        def qb(ev):
+        def qb(src, ev):
             events.append(ev)
 
         f = open('foo.log', 'wt')
