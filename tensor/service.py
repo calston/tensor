@@ -2,6 +2,7 @@ import time
 import os
 import importlib
 import re
+import copy
 
 import yaml
 
@@ -20,6 +21,7 @@ class TensorService(service.Service):
     def __init__(self, config):
         self.running = 0
         self.sources = []
+        self.lastEvents = {}
         self.outputs = []
 
         self.evCache = {}
@@ -114,26 +116,30 @@ class TensorService(service.Service):
             # connect the output
             reactor.callLater(0, output.createClient)
 
+    def createSource(self, source):
+        # Resolve the source
+        cl = source['source'].split('.')[-1]                # class
+        path = '.'.join(source['source'].split('.')[:-1])   # import path
+
+        # Import the module and get the object source we care about
+        sourceObj = getattr(importlib.import_module(path), cl)
+
+        if not ('debug' in source):
+            source['debug'] = self.debug
+
+        if not ('ttl' in source.keys()):
+            source['ttl'] = self.ttl
+
+        if not ('interval' in source.keys()):
+            source['interval'] = self.inter
+
+        return sourceObj(source, self.sendEvent, self)
+
     def setupSources(self, config):
         """Sets up source objects from the given config"""
         sources = config.get('sources', [])
 
         for source in sources:
-            # Resolve the source
-            cl = source['source'].split('.')[-1]                # class
-            path = '.'.join(source['source'].split('.')[:-1])   # import path
-
-            # Import the module and get the object source we care about
-            sourceObj = getattr(importlib.import_module(path), cl)
-
-            if not ('debug' in source):
-                source['debug'] = self.debug
-
-            if not ('ttl' in source.keys()):
-                source['ttl'] = self.ttl
-
-            if not ('interval' in source.keys()):
-                source['interval'] = self.inter
 
             for k, v in source.get('critical', {}).items():
                 self.critical[re.compile(k)] = v
@@ -141,7 +147,7 @@ class TensorService(service.Service):
             for k, v in source.get('warning', {}).items():
                 self.warn[re.compile(k)] = v
 
-            self.sources.append(sourceObj(source, self.sendEvent, self))
+            self.sources.append(self.createSource(source))
 
     def _aggregateQueue(self, events):
         # Handle aggregation for each event
@@ -176,7 +182,7 @@ class TensorService(service.Service):
                         if s:
                             ev.state = 'critical'
 
-    def sendEvent(self, events):
+    def sendEvent(self, source, events):
         """Callback that all event sources call when they have a new event
         or list of events
         """
@@ -195,12 +201,18 @@ class TensorService(service.Service):
                 log.msg("Sending events %s" % queue)
             reactor.callLater(0, output.eventsReceived, queue)
 
+        self.lastEvents[source] = time.time()
+
+    def _startSource(self, source):
+        source.startTimer()
+
     @defer.inlineCallbacks
     def startService(self):
         yield self.setupOutputs(self.config)
 
         if self.debug:
             log.msg("Starting service")
+
         stagger = 0
         # Start sources internal timers
         for source in self.sources:
@@ -208,11 +220,54 @@ class TensorService(service.Service):
                 log.msg("Starting source " + source.config['service'])
             # Stagger source timers, or use per-source start_delay
             start_delay = float(source.config.get('start_delay', stagger))
-            reactor.callLater(start_delay, source.startTimer)
+            reactor.callLater(start_delay, self._startSource, source)
             stagger += self.stagger
 
+        reactor.callLater(stagger, self.startWatchdog)
         self.running = 1
  
+    def startWatchdog(self):
+        # Start source watchdog
+        self.watchdog = task.LoopingCall(self.sourceWatchdog)
+        self.watchdog.start(10)
+
+    def sourceWatchdog(self):
+        """Watchdog timer function. 
+
+        Recreates sources which have not generated events in 10*interval if
+        they have watchdog set to true in their configuration
+        """
+        for i, source in enumerate(self.sources):
+            if not source.config.get('watchdog', False):
+                continue 
+            sn = repr(source)
+            last = self.lastEvents.get(source, None)
+            if last:
+                try:
+                    if last < (time.time()-(source.inter*10)):
+                        log.msg("Trying to restart stale source %s: %ss" % (
+                            sn, int(time.time() - last)
+                        ))
+
+                        s = self.sources.pop(i)
+                        try:
+                            s.t.stop()
+                        except Exception, e:
+                            log.msg("Could not stop timer for %s: %s" % (
+                                sn, e))
+
+                        config = copy.deepcopy(s.config)
+
+                        del self.lastEvents[source]
+                        del s, source
+
+                        source = self.createSource(config)
+
+                        reactor.callLater(0, self._startSource, source)
+                except Exception, e:
+                    log.msg("Could not reset source %s: %s" % (
+                        sn, e))
+
     @defer.inlineCallbacks
     def stopService(self):
         self.running = 0

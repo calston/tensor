@@ -113,6 +113,7 @@ class Source(object):
     def __init__(self, config, queueBack, tensor):
         self.config = config
         self.t = task.LoopingCall(self.tick)
+        self.td = None
 
         self.service = config['service']
         self.inter = float(config['interval'])
@@ -124,13 +125,21 @@ class Source(object):
 
         self.tensor = tensor
 
-        self.queueBack = queueBack
+        self.queueBack = self._queueBack(queueBack)
 
         self.running = False
 
+    def _queueBack(self, caller):
+        return lambda events: caller(self, events)
+
     def startTimer(self):
         """Starts the timer for this source"""
-        self.t.start(self.inter)
+        self.td = self.t.start(self.inter)
+
+    def stopTimer(self):
+        """Stops the timer for this source"""
+        self.td = None
+        self.t.stop()
 
     @defer.inlineCallbacks
     def _get(self):
