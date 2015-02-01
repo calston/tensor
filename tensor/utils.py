@@ -1,10 +1,17 @@
 import signal
+import json
 import time
+import urllib
 from StringIO import StringIO
 
+from zope.interface import implements
+
 from twisted.internet import reactor, protocol, defer, error
-from twisted.python import log
+from twisted.web.http_headers import Headers
+from twisted.web.iweb import IBodyProducer
+from twisted.web.client import Agent
 from twisted.names import client
+from twisted.python import log
 
 
 class Resolver(object):
@@ -53,6 +60,25 @@ class BodyReceiver(protocol.Protocol):
     def connectionLost(self, reason):
         self.buffer.seek(0)
         self.finished.callback(self.buffer)
+
+class StringProducer(object):
+    """String producer for writing to HTTP requests
+    """
+    implements(IBodyProducer)
+ 
+    def __init__(self, body):
+        self.body = body
+        self.length = len(body)
+ 
+    def startProducing(self, consumer):
+        consumer.write(self.body)
+        return defer.succeed(None)
+ 
+    def pauseProducing(self):
+        pass
+ 
+    def stopProducing(self):
+        pass
 
 class ProcessProtocol(protocol.ProcessProtocol):
     """ProcessProtocol which supports timeouts"""
@@ -109,3 +135,38 @@ def fork(executable, args=(), env={}, path=None, timeout=3600):
     p = ProcessProtocol(d, timeout)
     reactor.spawnProcess(p, executable, (executable,)+tuple(args), env, path)
     return d
+
+@defer.inlineCallbacks
+def getBody(url, method='GET', headers={}, data=None):
+    """Make an HTTP request and return the body
+    """
+    agent = Agent(reactor)
+
+    if not 'User-Agent' in headers:
+        headers['User-Agent'] = ['Tensor HTTP checker']
+
+    request = yield agent.request(method, url,
+        Headers(headers),
+        StringProducer(data) if data else None
+    )
+
+    if request.length:
+        d = defer.Deferred()
+        request.deliverBody(BodyReceiver(d))
+        b = yield d
+        body = b.read()
+    else:
+        body = ""
+
+    defer.returnValue(body)
+
+@defer.inlineCallbacks
+def getJson(url, method='GET', headers={}, data=None):
+    """Fetch a JSON result via HTTP
+    """
+    if not 'Content-Type' in headers:
+        headers['Content-Type'] = ['application/json']
+
+    body = yield getBody(url, method, headers, data)
+    
+    defer.returnValue(json.loads(body))

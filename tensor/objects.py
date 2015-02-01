@@ -133,6 +133,15 @@ class Source(object):
         self.t.start(self.inter)
 
     @defer.inlineCallbacks
+    def _get(self):
+        event = yield defer.maybeDeferred(self.get)
+        if self.config.get('debug', False):
+            log.msg("[%s] Tick: %s" % (self.config['service'], event))
+
+        if event:
+            self.queueBack(event)
+
+    @defer.inlineCallbacks
     def tick(self):
         """Called for every timer tick. Calls self.get which can be a deferred
         and passes that result back to the queueBack method
@@ -146,12 +155,7 @@ class Source(object):
         self.running = True
 
         try:
-            event = yield defer.maybeDeferred(self.get)
-            if self.config.get('debug', False):
-                log.msg("[%s] Tick: %s" % (self.config['service'], event))
-
-            if event:
-                self.queueBack(event)
+            yield self._get()
         except Exception, e:
             log.msg("[%s] Unhandled error: %s" % (self.service, e))
 
