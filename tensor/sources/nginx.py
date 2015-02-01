@@ -64,7 +64,7 @@ class Nginx(Source):
     def get(self):
         url = self.config.get('url', self.config.get('stats_url'))
 
-        body = yield HTTPRequest.getBody(url,
+        body = yield HTTPRequest().getBody(url,
             headers={'User-Agent': ['Tensor']},
         )
 
