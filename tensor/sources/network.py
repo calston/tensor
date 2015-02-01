@@ -60,7 +60,14 @@ class HTTP(Source):
             log.msg('[%s] Request timeout' % url)
             t_delta = (time.time() - t0) * 1000
             defer.returnValue(
-                self.createEvent('critical', 'Latency to %s - timeout' % url, t_delta,
+                self.createEvent('critical', '%s - timeout' % url, t_delta,
+                    prefix="latency")
+            )
+        except Exception, e:
+            log.msg('[%s] Request error %s' % (url, e))
+            t_delta = (time.time() - t0) * 1000
+            defer.returnValue(
+                self.createEvent('critical', '%s - %s' % (url, e), t_delta,
                     prefix="latency")
             )
 

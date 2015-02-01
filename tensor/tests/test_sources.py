@@ -141,6 +141,19 @@ class TestLinuxSources(unittest.TestCase):
         self.assertEquals(event.state, 'critical')
         self.assertEquals('timeout' in event.description, True)
 
+    @defer.inlineCallbacks
+    def test_http_request_fail(self):
+        self.skip_if_no_hostname()
+        s = network.HTTP({
+            'interval': 1.0, 
+            'service': 'http', 
+            'ttl': 60,
+            'url': 'http://noresolve/'
+        }, self._qb, None)
+
+        event = yield s._get()
+        self.assertEquals(event.state, 'critical')
+
     def test_network_stats(self):
         self.skip_if_no_hostname()
         s = basic.Network(

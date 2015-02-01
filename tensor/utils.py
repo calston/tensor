@@ -147,6 +147,7 @@ class HTTPRequest(object):
 
     def abort_request(self, agent):
         """Called to abort request on timeout"""
+        self.timedout = True
         if not agent.called:
             try:
                 agent.cancel()
@@ -166,6 +167,7 @@ class HTTPRequest(object):
         defer.returnValue(body)
 
     def request(self, url, method='GET', headers={}, data=None):
+        self.timedout = False
         agent = Agent(reactor).request(method, url,
             Headers(headers),
             StringProducer(data) if data else None
@@ -181,6 +183,9 @@ class HTTPRequest(object):
                 return self.response(request)
 
             def requestAborted(failure):
+                if timer.active():
+                    timer.cancel()
+
                 failure.trap(defer.CancelledError,
                              error.ConnectingCancelledError)
 
