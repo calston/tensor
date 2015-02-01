@@ -147,8 +147,7 @@ class Source(object):
         if self.config.get('debug', False):
             log.msg("[%s] Tick: %s" % (self.config['service'], event))
 
-        if event:
-            self.queueBack(event)
+        defer.returnValue(event)
 
     @defer.inlineCallbacks
     def tick(self):
@@ -164,7 +163,10 @@ class Source(object):
         self.running = True
 
         try:
-            yield self._get()
+            event = yield self._get()
+            if event:
+                self.queueBack(event)
+
         except Exception, e:
             log.msg("[%s] Unhandled error: %s" % (self.service, e))
 

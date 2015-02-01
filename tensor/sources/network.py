@@ -9,27 +9,30 @@
 import time
 
 from twisted.internet import defer, reactor
-from twisted.web.client import Agent
-from twisted.web.http_headers import Headers
+from twisted.python import log
 
 from zope.interface import implements
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 
-from tensor.utils import BodyReceiver, fork
+from tensor.utils import fork, HTTPRequest, Timeout
 
 class HTTP(Source):
     """Performs an HTTP request
 
     **Configuration arguments:**
     
-    :param method: HTTP request method to use
+    :param url: HTTP URL
+    :type url: str.
+    :param method: HTTP request method to use (default GET)
     :type method: str.
     :param match: A text string to match in the document when it is correct
     :type match: str.
     :param useragent: User-Agent header to use
     :type useragent: str.
+    :param timeout: Timeout for connection (default 60s)
+    :type timeout: int.
 
     **Metrics:**
 
@@ -40,26 +43,26 @@ class HTTP(Source):
 
     @defer.inlineCallbacks
     def get(self):
-        agent = Agent(reactor)
 
         method = self.config.get('method', 'GET')
         url = self.config.get('url', 'http://%s/' % self.hostname)
         match = self.config.get('match', None)
         ua = self.config.get('useragent', 'Tensor HTTP checker')
+        timeout = self.config.get('timeout', 60)
 
         t0 = time.time()
 
-        request = yield agent.request(method, url,
-            Headers({'User-Agent': [ua]}),
-        )
-
-        if request.length:
-            d = defer.Deferred()
-            request.deliverBody(BodyReceiver(d))
-            b = yield d
-            body = b.read()
-        else:
-            body = ""
+        try:
+            body = yield HTTPRequest(timeout).getBody(url, method,
+                {'User-Agent': [ua]},
+            )
+        except Timeout:
+            log.msg('[%s] Request timeout' % url)
+            t_delta = (time.time() - t0) * 1000
+            defer.returnValue(
+                self.createEvent('critical', 'Latency to %s - timeout' % url, t_delta,
+                    prefix="latency")
+            )
 
         t_delta = (time.time() - t0) * 1000
 
@@ -75,7 +78,6 @@ class HTTP(Source):
             self.createEvent(state, 'Latency to %s' % url, t_delta,
                 prefix="latency")
         )
-
 
 class Ping(Source):
     """Performs an Ping checks against a destination

@@ -13,6 +13,10 @@ from twisted.web.client import Agent
 from twisted.names import client
 from twisted.python import log
 
+class Timeout(Exception):
+    """
+    Raised to notify that an operation exceeded its timeout.
+    """
 
 class Resolver(object):
     """Helper class for DNS resolution
@@ -136,37 +140,76 @@ def fork(executable, args=(), env={}, path=None, timeout=3600):
     reactor.spawnProcess(p, executable, (executable,)+tuple(args), env, path)
     return d
 
-@defer.inlineCallbacks
-def getBody(url, method='GET', headers={}, data=None):
-    """Make an HTTP request and return the body
-    """
-    agent = Agent(reactor)
 
-    if not 'User-Agent' in headers:
-        headers['User-Agent'] = ['Tensor HTTP checker']
+class HTTPRequest(object):
+    def __init__(self, timeout=120):
+        self.timeout = timeout
 
-    request = yield agent.request(method, url,
-        Headers(headers),
-        StringProducer(data) if data else None
-    )
+    def abort_request(self, agent):
+        """Called to abort request on timeout"""
+        if not agent.called:
+            try:
+                agent.cancel()
+            except error.AlreadyCancelled:
+                return
+        
+    @defer.inlineCallbacks
+    def response(self, request):
+        if request.length:
+            d = defer.Deferred()
+            request.deliverBody(BodyReceiver(d))
+            b = yield d
+            body = b.read()
+        else:
+            body = ""
 
-    if request.length:
-        d = defer.Deferred()
-        request.deliverBody(BodyReceiver(d))
-        b = yield d
-        body = b.read()
-    else:
-        body = ""
+        defer.returnValue(body)
 
-    defer.returnValue(body)
+    def request(self, url, method='GET', headers={}, data=None):
+        agent = Agent(reactor).request(method, url,
+            Headers(headers),
+            StringProducer(data) if data else None
+        )
 
-@defer.inlineCallbacks
-def getJson(url, method='GET', headers={}, data=None):
-    """Fetch a JSON result via HTTP
-    """
-    if not 'Content-Type' in headers:
-        headers['Content-Type'] = ['application/json']
+        if self.timeout:
+            timer = reactor.callLater(self.timeout, self.abort_request,
+                agent)
 
-    body = yield getBody(url, method, headers, data)
-    
-    defer.returnValue(json.loads(body))
+            def timeoutProxy(request):
+                if timer.active():
+                    timer.cancel()
+                return self.response(request)
+
+            def requestAborted(failure):
+                failure.trap(defer.CancelledError,
+                             error.ConnectingCancelledError)
+
+                raise Timeout(
+                    "Request took longer than %s seconds" % self.timeout)
+
+            agent.addCallback(timeoutProxy).addErrback(requestAborted)
+        else:
+            agent.addCallback(self.response)
+
+        return agent
+
+
+    def getBody(self, url, method='GET', headers={}, data=None):
+        """Make an HTTP request and return the body
+        """
+
+        if not 'User-Agent' in headers:
+            headers['User-Agent'] = ['Tensor HTTP checker']
+
+        return self.request(url, method, headers, data)
+
+    @defer.inlineCallbacks
+    def getJson(self, url, method='GET', headers={}, data=None):
+        """Fetch a JSON result via HTTP
+        """
+        if not 'Content-Type' in headers:
+            headers['Content-Type'] = ['application/json']
+
+        body = yield getBody(url, method, headers, data)
+        
+        defer.returnValue(json.loads(body))

@@ -8,16 +8,14 @@
 
 import time
 
-from twisted.internet import defer, reactor
-from twisted.web.client import Agent
-from twisted.web.http_headers import Headers
+from twisted.internet import defer
 
 from zope.interface import implements
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 
-from tensor.utils import BodyReceiver, fork
+from tensor.utils import HTTPRequest, fork
 from tensor.aggregators import Counter64
 from tensor.logs import parsers, follower
 
@@ -64,24 +62,15 @@ class Nginx(Source):
 
     @defer.inlineCallbacks
     def get(self):
-        agent = Agent(reactor)
-
         url = self.config.get('url', self.config.get('stats_url'))
 
-        t0 = time.time()
-
-        request = yield agent.request('GET', url,
-            Headers({'User-Agent': ['Tensor']}),
+        body = yield HTTPRequest.getBody(url,
+            headers={'User-Agent': ['Tensor']},
         )
 
         events = []
 
-        if request.length:
-            d = defer.Deferred()
-            request.deliverBody(BodyReceiver(d))
-            b = yield d
-            body = b.read()
-                
+        if body:
             metrics = self._parse_nginx_stats(body)
 
             for k,v in metrics.items():

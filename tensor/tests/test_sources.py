@@ -6,8 +6,7 @@ from twisted.internet import defer, endpoints, reactor
 from twisted.web import server, static
 
 from tensor.sources.linux import basic, process
-from tensor.sources import riak
-from tensor.sources import nginx
+from tensor.sources import riak, nginx, network
 
 class TestLinuxSources(unittest.TestCase):
     def skip_if_no_hostname(self):
@@ -113,6 +112,34 @@ class TestLinuxSources(unittest.TestCase):
             {'interval': 1.0, 'service': 'ps', 'ttl': 60}, self._qb, None)
 
         yield s.get()
+
+    @defer.inlineCallbacks
+    def test_http_request(self):
+        self.skip_if_no_hostname()
+        s = network.HTTP({
+            'interval': 1.0, 
+            'service': 'http', 
+            'ttl': 60,
+            'url': 'http://imcol.in/'
+        }, self._qb, None)
+
+        event = yield s._get()
+        self.assertEquals(event.state, 'ok')
+
+    @defer.inlineCallbacks
+    def test_http_request_timeout(self):
+        self.skip_if_no_hostname()
+        s = network.HTTP({
+            'interval': 1.0, 
+            'service': 'http', 
+            'ttl': 60,
+            'timeout': 1,
+            'url': 'http://1.1.1.1/'
+        }, self._qb, None)
+
+        event = yield s._get()
+        self.assertEquals(event.state, 'critical')
+        self.assertEquals('timeout' in event.description, True)
 
     def test_network_stats(self):
         self.skip_if_no_hostname()
