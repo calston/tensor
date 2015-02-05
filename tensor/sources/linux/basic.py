@@ -136,6 +136,8 @@ class DiskFree(Source):
     **Metrics:**
 
     :(service name).(device): Used space (%)
+    :(service name).(device).bytes: Used space (kbytes)
+    :(service name).(device).free: Free space (kbytes)
     """
     implements(ITensorSource)
 
@@ -150,10 +152,16 @@ class DiskFree(Source):
         for disk, size, used, free, util, mount in out:
             if disk != "udev":
                 util = int(util.strip('%'))
-                events.append(
-                    self.createEvent('ok', 'Disk usage %s' % (util),
-                                     util, prefix=disk)
-                )
+                used = int(used)
+                free = int(free)
+                events.extend([
+                    self.createEvent('ok', 'Disk usage %s%%' % (util),
+                                     util, prefix=disk),
+                    self.createEvent('ok', 'Disk usage %s kB' % (used),
+                                     used, prefix="%s.bytes" % disk),
+                    self.createEvent('ok', 'Disk free %s kB' % (free),
+                                     free, prefix="%s.free" % disk)
+                ])
 
         defer.returnValue(events)
 
