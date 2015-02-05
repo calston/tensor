@@ -215,6 +215,6 @@ class HTTPRequest(object):
         if not 'Content-Type' in headers:
             headers['Content-Type'] = ['application/json']
 
-        body = yield getBody(url, method, headers, data)
+        body = yield self.getBody(url, method, headers, data)
         
         defer.returnValue(json.loads(body))
