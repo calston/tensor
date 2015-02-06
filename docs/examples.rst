@@ -38,6 +38,9 @@ Create a `riemann` and `grafana` database, and some users for them
     $ curl -X POST 'http://localhost:8086/db/grafana/users?u=root&p=root' \
       -d '{"name": "grafana", "password": "grafana"}'
 
+NB. InfluxDB is easy to get running but is not production ready or stable
+so your data can very easily be lost.
+
 Step 3: Install Grafana
 -----------------------
 ::

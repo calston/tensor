@@ -1,10 +1,32 @@
 import time
+import sys
 
 from twisted.internet import reactor, defer, task
+from twisted.python import log
+
+try:
+    from OpenSSL import SSL
+    from twisted.internet import ssl
+except:
+    SSL=None
+
 from tensor.protocol import riemann
 
 from tensor.objects import Output
 
+if SSL:
+    class ClientTLSContext(ssl.ClientContextFactory):
+        def __init__(self, key, cert):
+            self.key = key
+            self.cert = cert
+
+        def getContext(self):
+            self.method = SSL.TLSv1_METHOD
+            ctx = ssl.ClientContextFactory.getContext(self)
+            ctx.use_certificate_file(self.cert)
+            ctx.use_privatekey_file(self.key)
+
+            return ctx
 
 class RiemannTCP(Output):
     """Riemann TCP output
@@ -21,6 +43,12 @@ class RiemannTCP(Output):
     :type interval: float.
     :param pressure: Maximum backpressure (-1 is no limit)
     :type pressure: int.
+    :param tls: Use TLS (default false)
+    :type tls: bool.
+    :param cert: Host certificate path
+    :type cert: str.
+    :param key: Host private key path
+    :type key: str.
     """
     def __init__(self, *a):
         Output.__init__(self, *a)
@@ -37,15 +65,31 @@ class RiemannTCP(Output):
         else:
             self.queueDepth = None
 
+        self.tls = self.config.get('tls', False)
+
+        if self.tls:
+            self.cert = self.config['cert']
+            self.key = self.config['key']
+
     def createClient(self):
         """Create a TCP connection to Riemann with automatic reconnection
         """
+
         self.factory = riemann.RiemannClientFactory()
 
         server = self.config.get('server', 'localhost')
         port = self.config.get('port', 5555)
-
-        self.connector = reactor.connectTCP(server, port, self.factory)
+        
+        if self.tls:
+            if SSL:
+                self.connector = reactor.connectSSL(server, port, self.factory,
+                    ClientTLSContext(self.key, self.cert))
+            else:
+                log.msg('[FATAL] SSL support not available!' \
+                    ' Please install PyOpenSSL. Exiting now')
+                reactor.stop()
+        else:
+            self.connector = reactor.connectTCP(server, port, self.factory)
 
         d = defer.Deferred()
 
