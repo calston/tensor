@@ -18,8 +18,24 @@ queue `interval` config setting as the queue is emptied. This list of
 The `output` configuration option is passed a string representing an object
 the same way as `sources` configurations are ::
 
-    output: tensor.sources.network.Ping
+    outputs:
+        - output: tensor.outputs.riemann.RiemannTCP
+          server: 127.0.0.1
+          port: 5555
 
+Using TLS
+=========
+
+The TCP output also supports TLS, which can make use of Puppet certs for
+convenience ::
+
+    outputs:
+        - output: tensor.outputs.riemann.RiemannTCP
+          server: 127.0.0.1
+          port: 5554
+          tls: true
+          cert: /var/lib/puppet/ssl/certs/test.acme.com.pem
+          key: /var/lib/puppet/ssl/private_keys/test.acme.com.pem
 
 Writing your own outputs
 ========================
