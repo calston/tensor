@@ -29,6 +29,13 @@ tensor.sources.riak
    :members:
    :show-inheritance:
 
+tensor.sources.riemann
+===================
+
+.. automodule:: tensor.sources.riemann
+   :members:
+   :show-inheritance:
+
 tensor.sources.rabbitmq
 ===================
 
