@@ -40,6 +40,13 @@ class RiemannProtobufMixin(object):
         )
 
         return message.SerializeToString()
+
+    def decodeMessage(self, data):
+        """Decode a protobuf message into a list of Tensor events"""
+        message = proto_pb2.Msg()
+        message.ParseFromString(data)
+
+        return message
     
     def sendEvents(self, events):
         """Send a Tensor Event to Riemann"""
