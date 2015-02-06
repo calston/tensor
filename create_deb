@@ -1,3 +1,3 @@
 #!/bin/bash
 
-fpm -s python -t deb --no-python-dependencies --after-install scripts/post-install.sh --deb-init scripts/tensor -d python-twisted -d python-protobuf -d python-yaml -a amd64 -n tensor setup.py
+fpm -s python -t deb --no-python-dependencies --after-install scripts/post-install.sh --deb-init scripts/tensor -d python-twisted -d python-protobuf -d python-yaml -d python-openssl -a amd64 -n tensor setup.py
