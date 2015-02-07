@@ -22,7 +22,7 @@ class TensorService(service.Service):
         self.running = 0
         self.sources = []
         self.lastEvents = {}
-        self.outputs = []
+        self.outputs = {}
 
         self.evCache = {}
         self.critical = {}
@@ -108,14 +108,20 @@ class TensorService(service.Service):
             cl = output['output'].split('.')[-1]                # class
             path = '.'.join(output['output'].split('.')[:-1])   # import path
 
-            # Import the module and get the object output we care about
-            outputObj = getattr(importlib.import_module(path), cl)
+            # Import the module and construct the output object
+            outputObj = getattr(
+                importlib.import_module(path), cl)(output, self)
 
-            self.outputs.append(outputObj(output, self))
+            name = output.get('name', None)
 
-        for output in self.outputs:
+            # Add the output to our routing hash
+            if name in self.outputs:
+                self.outputs[name].append(outputObj)
+            else:
+                self.outputs[name] = [outputObj]
+
             # connect the output
-            reactor.callLater(0, output.createClient)
+            reactor.callLater(0, outputObj.createClient)
 
     def createSource(self, source):
         # Resolve the source
@@ -190,6 +196,24 @@ class TensorService(service.Service):
                         if s:
                             ev.state = 'critical'
 
+    def routeEvent(self, source, events):
+        routes = source.config.get('route', None)
+    
+        if not isinstance(routes, list):
+            routes = [routes]
+
+        for route in routes:
+            if self.debug:
+                log.msg("Sending events %s to %s" % (events, route))
+ 
+            if not route in self.outputs:
+                # Non existant route
+                log.msg('Could not route %s -> %s.' % (
+                    source.config['service'], route))
+            else:
+                for output in self.outputs[route]:
+                   reactor.callLater(0, output.eventsReceived, events)
+
     def sendEvent(self, source, events):
         """Callback that all event sources call when they have a new event
         or list of events
@@ -202,13 +226,12 @@ class TensorService(service.Service):
             events = [events]
     
         queue = self._aggregateQueue(events)
-        if (source in self.critical) or (source in self.warn):
-            self.setStates(source, queue)
 
-        for output in self.outputs:
-            if self.debug:
-                log.msg("Sending events %s" % queue)
-            reactor.callLater(0, output.eventsReceived, queue)
+        if queue:
+            if (source in self.critical) or (source in self.warn):
+                self.setStates(source, queue)
+
+            self.routeEvent(source, queue)
 
         self.lastEvents[source] = time.time()
 
@@ -284,5 +307,6 @@ class TensorService(service.Service):
         if self.watchdog:
             self.watchdog.stop()
 
-        for output in self.outputs:
-            yield defer.maybeDeferred(output.stop)
+        for n, outputs in self.outputs.items():
+            for output in outputs:
+                yield defer.maybeDeferred(output.stop)
