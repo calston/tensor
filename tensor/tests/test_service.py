@@ -6,7 +6,7 @@ from twisted.internet.protocol import ServerFactory
 from twisted.protocols.basic import Int32StringReceiver
 
 from tensor.ihateprotobuf import proto_pb2
-from tensor.objects import Event
+from tensor.objects import Event, Source, Output
 from tensor.protocol.riemann import RiemannClientFactory
 from tensor.service import TensorService
 from tensor.aggregators import Counter32, Counter64, Counter
@@ -77,6 +77,17 @@ class FakeRiemannServerFactory(ServerFactory):
         return d
 
 
+class FakeSource(Source):
+    pass
+
+class FakeOutput(Output):
+    def __init__(self, *a):
+        Output.__init__(self, *a)
+        self.events = None
+
+    def eventsReceived(self, events):
+        self.events = events
+
 class TestService(unittest.TestCase):
     timeout = 10
 
@@ -89,6 +100,17 @@ class TestService(unittest.TestCase):
         service = TensorService(config)
         self.addCleanup(self.stop_service, service)
         return service
+
+    def make_source(self, service):
+        source = FakeSource(
+            {
+                'service': 'test',
+                'interval': 1.0,
+                'ttl': 60.0
+            },
+            service.sendEvent, service)
+        service.sources.append(source)
+        return source
 
     @defer.inlineCallbacks
     def stop_service(self, service):
@@ -107,9 +129,11 @@ class TestService(unittest.TestCase):
         yield service.startService()
 
         [] = yield factory.wait_for_messages(0)
+
+        source = self.make_source(service)
         event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0,
                       hostname='localhost')
-        service.sendEvent(None, event)
+        service.sendEvent(source, event)
         [msg] = yield factory.wait_for_messages(1)
         [event] = msg.events
         self.assertEqual(event.description, 'Sky has not fallen')
@@ -123,15 +147,16 @@ class TestService(unittest.TestCase):
 
         # Send an event to make sure everything's happy
         [] = yield factory.wait_for_messages(0)
+        source = self.make_source(service)
         event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0,
                       hostname='localhost')
-        service.sendEvent(None, event)
+        service.sendEvent(source, event)
         [msg] = yield factory.wait_for_messages(1)
         [event] = msg.events
         self.assertEqual(event.description, 'Sky has not fallen')
 
         # Disconnect and hope we reconnect
-        [output] = service.outputs
+        [output] = service.outputs[None]
         yield output.connector.disconnect()
         yield wait(0.2)
 
@@ -139,7 +164,7 @@ class TestService(unittest.TestCase):
         [_] = yield factory.wait_for_messages(1)
         event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0,
                       hostname='localhost')
-        service.sendEvent(None, event)
+        service.sendEvent(source, event)
         [_, msg2] = yield factory.wait_for_messages(2)
         [event] = msg.events
         self.assertEqual(event.description, 'Sky has not fallen')
@@ -206,3 +231,43 @@ class TestService(unittest.TestCase):
         self.assertEqual(ev1.state, 'ok')
         self.assertEqual(ev2.state, 'critical')
         self.assertEqual(ev3.state, 'warning')
+
+    @defer.inlineCallbacks
+    def test_source_routing(self):
+        service = self.make_service({
+            'interval': 1.0, 'ttl': 60.0, 
+            'sources': [{
+                'source': 'tensor.sources.linux.basic.LoadAverage', 
+                'interval': 2.0,
+                'route': 'out1',
+                'service': 'load'}]
+        })
+
+        output1 = FakeOutput({}, service)
+        output2 = FakeOutput({}, service)
+
+        [source] = service.sources
+
+        service.outputs = {
+            'out1':[output1],
+            'out2':[output2]
+        }
+
+        event = Event('ok', 'load', 'load', 1, 1, hostname='localhost')
+
+        service.sendEvent(source, event)
+
+        yield wait(0.2)
+
+        self.assertEqual(len(output1.events), 1)
+        self.assertEqual(output2.events, None)
+       
+        output1.events = None
+        source.config['route'] = ['out1', 'out2']
+
+        service.sendEvent(source, event)
+
+        yield wait(0.2)
+
+        self.assertEqual(len(output1.events), 1)
+        self.assertEqual(len(output2.events), 1)

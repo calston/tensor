@@ -42,8 +42,7 @@ class Event(object):
             self.hostname = socket.gethostbyaddr(socket.gethostname())[0]
 
     def id(self):
-        return hashlib.sha1('%s.%s' % (self.hostname, self.service)
-            ).hexdigest()
+        return self.hostname + '.' + self.service
 
     def __repr__(self):
         ser = ['%s=%s' % (k, repr(v)) for k,v in {
