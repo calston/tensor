@@ -116,11 +116,11 @@ which output keys for different devices and metrics::
 Routing sources
 ===============
 
-Since multiple outputs can be added, Tensor events can be routed form sources
+Since multiple outputs can be added, Tensor events can be routed from sources
 to specific outputs or multiple outputs. By default events are routed to all
 outputs.
 
-To enable routing, outputs need a `name` attribute::
+To enable routing, outputs need a unique `name` attribute::
 
     outputs:
         - output: tensor.outputs.riemann.RiemannTCP
