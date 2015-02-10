@@ -13,8 +13,8 @@ This will also install Twisted, protobuf and PyYAML
 Or you can use the .deb package. Let the latest release from https://github.com/calston/tensor/releases/latest ::
     
     $ aptitude install python-twisted python-protobuf python-yaml
-    $ wget https://github.com/calston/tensor/releases/download/0.2.0/tensor_0.2.0_amd64.deb
-    $ dpkg -i tensor_0.2.0_amd64.deb
+    $ wget https://github.com/calston/tensor/releases/download/0.2.6/tensor_0.2.6_amd64.deb
+    $ dpkg -i tensor_0.2.6_amd64.deb
 
 This also gives you an init script and default config in /etc/tensor/
 
@@ -43,11 +43,13 @@ they collect metrics from the system. All `interval` attributes are floating
 point in seconds, this means you can check (and send to Riemann) at rates
 well below 1 second.
 
+Using outputs
+=============
 You can configure multiple outputs which receive a copy of every message
 for example ::
 
     outputs:
-        - output: tensor.outputs.riemann.RiemannUDP
+        - output: tensor.outputs.riemann.RiemannTCP
           server: localhost
           port: 5555
 
@@ -55,6 +57,9 @@ If you enable multiple outputs then the `server`, `port` and `proto` options
 will go un-used and the default Riemann TCP transport won't start.
 
 You can configure as many outputs as you like, or create your own.
+
+Using sources
+=============
 
 To configure the basic CPU usage source add it to the `sources` list in the
 config file ::
@@ -95,6 +100,9 @@ This will ping `8.8.8.8` every 60 seconds and raise a critical alert for
 the latency metric if it exceeds 100ms, and the packet loss metric if there
 is any at all.
 
+State triggers
+==============
+
 `critical` and `warning` matches can also be a regular expression for sources
 which output keys for different devices and metrics::
 
@@ -105,9 +113,53 @@ which output keys for different devices and metrics::
         network.\w+.tx_packets: "> 1000",
     }
 
+Routing sources
+===============
+
+Since multiple outputs can be added, Tensor events can be routed form sources
+to specific outputs or multiple outputs. By default events are routed to all
+outputs.
+
+To enable routing, outputs need a `name` attribute::
+
+    outputs:
+        - output: tensor.outputs.riemann.RiemannTCP
+          name: riemann1
+          server: riemann1.acme.com
+          port: 5555
+
+        - output: tensor.outputs.riemann.RiemannTCP
+          name: riemann2
+          server: riemann2.acme.com
+          port: 5555
+
+        - output: tensor.outputs.riemann.RiemannUDP
+          name: riemannudp
+          server: riemann1.acme.com
+          port: 5555
+
+    sources:
+        - service: cpu1
+          source: tensor.sources.linux.basic.CPU
+          interval: 1.0
+          route: riemannudp
+
+        - service: cpu2
+          source: tensor.sources.linux.basic.CPU
+          interval: 1.0
+          route:
+            - riemann1
+            - riemann2
+
+The `route` attribute can also accept a list of output names. The above
+configuration would route cpu1 metrics to the UDP output, and the cpu2
+metrics to both riemann1 and riemann2 TCP outputs.
+
 Starting Tensor
 ===============
 
 To start Tensor, simply use twistd to run the service and pass a config file::
 
     twistd -n tensor -c tensor.yml
+
+If you're using the Debian package then an init script is included.
