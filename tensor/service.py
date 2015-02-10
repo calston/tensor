@@ -169,15 +169,21 @@ class TensorService(service.Service):
         for ev in events:
             if ev.aggregation:
                 id = ev.id()
-                if id in self.evCache:
-                    tDelta = ev.time - self.evCache[id].time
-                    m = ev.aggregation(
-                        self.evCache[id].metric, ev.metric, tDelta)
-                    queue.append(ev.copyWithMetric(m))
+                thisM = ev.metric
 
-                self.evCache[id] = ev
+                if id in self.evCache:
+                    lastM, lastTime = self.evCache[id]
+                    tDelta = ev.time - lastTime
+                    m = ev.aggregation(
+                        lastM, ev.metric, tDelta)
+
+                    ev.metric = m
+                    queue.append(ev)
+
+                self.evCache[id] = (thisM, ev.time)
             else:
                 queue.append(ev)
+
 
         return queue
 
