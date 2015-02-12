@@ -51,9 +51,6 @@ class Emperor(Source):
     :param port: Port
     :type port: int.
     
-    **Metrics:**
-
-    :(service name).(node name).(keys...): 
     """
 
     implements(ITensorSource)
@@ -95,7 +92,7 @@ class Emperor(Source):
             self.createEvent('ok', 'active', active, prefix='total.active'),
             self.createEvent('ok', 'accepting', accepting,
                 prefix='total.accepting'),
-            self.createEvent('ok', 'respawns', accepting,
+            self.createEvent('ok', 'respawns', respawns,
                 prefix='total.respawns'),
         ])
 
