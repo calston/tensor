@@ -74,9 +74,6 @@ class MuninNode(Source):
 
     implements(ITensorSource)
 
-    def __init__(self, *a, **kw):
-        Source.__init__(self, *a, **kw)
-
     @defer.inlineCallbacks
     def get(self):
         host = self.config.get('host', 'localhost')
