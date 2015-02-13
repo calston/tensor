@@ -103,6 +103,8 @@ class ProcessStats(Source):
                 else:
                     key = comm
 
+                key = key.strip('.')
+
                 if key in procs:
                     procs[key]['cpu'] += cpu
                     procs[key]['mem'] += mem
