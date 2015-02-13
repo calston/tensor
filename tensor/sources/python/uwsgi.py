@@ -35,7 +35,7 @@ class JSONProtocol(Protocol):
 
     def connectionLost(self, why):
         self.buffer.seek(0)
-        self.d.callback(json.loads(self.buffer.read()))
+        self.d.callback(json.load(self.buffer))
 
     def disconnect(self):
         return self.transport.loseConnection()
