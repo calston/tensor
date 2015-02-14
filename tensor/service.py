@@ -1,4 +1,5 @@
 import time
+import sys
 import os
 import importlib
 import re
@@ -37,6 +38,9 @@ class TensorService(service.Service):
         self.config = config
 
         both = lambda i1, i2, t: isinstance(i1, t) and isinstance(i2, t)
+
+        if os.path.exists('/var/lib/tensor'):
+            sys.path.append('/var/lib/tensor')
 
         if 'include_path' in config:
             ipath = config['include_path']
@@ -124,6 +128,12 @@ class TensorService(service.Service):
             reactor.callLater(0, outputObj.createClient)
 
     def createSource(self, source):
+        # 
+        if source.get('path'):
+            path = source['path']
+            if path not in sys.path:
+                sys.path.append(path)
+
         # Resolve the source
         cl = source['source'].split('.')[-1]                # class
         path = '.'.join(source['source'].split('.')[:-1])   # import path
