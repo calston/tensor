@@ -100,6 +100,26 @@ This will ping `8.8.8.8` every 60 seconds and raise a critical alert for
 the latency metric if it exceeds 100ms, and the packet loss metric if there
 is any at all.
 
+Configuration
+=============
+Sources can contain any number of configuration attributes which vary between
+them. All sources take the following options though
+
++--------------+-----------+-------------------------------------------------+
+| service      | mandatory | Service name after which extra metric names are |
+|              |           | appended, dot separated                         |
++--------------+-----------+-------------------------------------------------+
+| interval     | depends   | Clock tick interval, for sources which implement|
+|              |           | a polling clock                                 |
++--------------+-----------+-------------------------------------------------+
+| ttl          | optional  | TTL for metric expiry in Riemann                |
++--------------+-----------+-------------------------------------------------+
+| hostname     | optional  | Hostname to tag this service with. Defaults to  |
+|              |           | system FQDN but can be overriden.               |
++--------------+-----------+-------------------------------------------------+
+| tags         | optional  | Comma separated list of tags for metrics        |
++--------------+-----------+-------------------------------------------------+
+
 State triggers
 ==============
 
