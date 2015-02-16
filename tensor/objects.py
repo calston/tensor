@@ -118,6 +118,13 @@ class Source(object):
         self.inter = float(config['interval'])
         self.ttl = float(config['ttl'])
 
+        if 'tags' in config:
+            self.tags = [tag.strip() for tag in config['tags'].split(',')]
+        else:
+            self.tags = []
+
+        print self.tags
+
         self.hostname = config.get('hostname')
         if self.hostname is None:
             self.hostname = socket.gethostbyaddr(socket.gethostname())[0]
@@ -181,7 +188,7 @@ class Source(object):
 
         return Event(state, service_name, description, metric, self.ttl,
             hostname=hostname or self.hostname, aggregation=aggregation,
-            evtime=evtime
+            evtime=evtime, tags=self.tags
         )
 
     def get(self):
