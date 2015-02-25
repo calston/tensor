@@ -123,8 +123,6 @@ class Source(object):
         else:
             self.tags = []
 
-        print self.tags
-
         self.hostname = config.get('hostname')
         if self.hostname is None:
             self.hostname = socket.gethostbyaddr(socket.gethostname())[0]
