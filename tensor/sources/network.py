@@ -118,7 +118,7 @@ class Ping(Source):
         if ip:
             try:
                 loss, latency = yield icmp.ping(ip, 5)
-            except:
+            except: 
                 loss, latency = 100, None
 
             event = [self.createEvent('ok', '%s%% loss to %s' % (loss,host), loss,
