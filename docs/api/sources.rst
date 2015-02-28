@@ -83,3 +83,10 @@ tensor.sources.snmp
    :members:
    :show-inheritance:
 
+tensor.sources.database.postgresql
+==================================
+
+.. automodule:: tensor.sources.database.postgresql
+   :members:
+   :show-inheritance:
+
