@@ -11,7 +11,9 @@ from twisted.internet.protocol import DatagramProtocol
 from twisted.internet.interfaces import ISystemHandle
 
 # OMG SHUT UP
-udp.log = lambda x: None
+class STFU(object):
+    msg = lambda x: None
+udp.log = STFU()
 
 class IP(object):
     """IP header decoder
