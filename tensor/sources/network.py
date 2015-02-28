@@ -15,6 +15,7 @@ from zope.interface import implements
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
+from tensor.protocol import icmp
 
 from tensor.utils import fork, HTTPRequest, Timeout
 
@@ -89,8 +90,6 @@ class HTTP(Source):
 class Ping(Source):
     """Performs an Ping checks against a destination
 
-    This is a horrible implementation which forks to `ping`
-
     **Configuration arguments:**
     
     :param destination: Host name or IP address to ping
@@ -111,40 +110,25 @@ class Ping(Source):
     def get(self):
         host = self.config.get('destination', self.hostname)
 
-
         try:
-            out, err, code = yield fork('/bin/ping',
-                args=('-q', '-n', '-c', '5', '-i', '0.2', host), timeout=30.0)
+            ip = yield reactor.resolve(host)
         except:
-            code = 1
+            ip = None
 
-        if code == 0:
-            # Successful ping
+        if ip:
             try:
-                out = out.strip('\n').split('\n')[-2:]
-                loss = int(out[0].split()[5].strip('%'))
+                loss, latency = yield icmp.ping(ip, 5)
+            except: 
+                loss, latency = 100, None
 
-                stat = out[1].split()[3].split('/')
-                pmin, avg, pmax, mdev = [float(i) for i in stat]
+            event = [self.createEvent('ok', '%s%% loss to %s' % (loss,host), loss,
+                prefix="loss")]
 
-                event = [
-                    self.createEvent('ok', 'Latency to %s' % host, avg,
-                        prefix="latency"),
-                    self.createEvent('ok', '%s%% loss to %s' % (loss,host), loss,
-                        prefix="loss"),
-                ]
-            except Exception, e:
-                print("Could not parse response %s" % repr(out))
-                event = None
-
-        elif code == 1:
-            # Host unreachable
-            event = self.createEvent('critical', '100%% loss to %s' % host, 100.0,
-                    prefix="loss")
+            if latency:
+                event.append(self.createEvent('ok', 'Latency to %s' % host, latency,
+                            prefix="latency"))
         else:
-            # Some other kind of error like DNS resolution
-            event = self.createEvent('critical', 'Unable to reach %s' % host, 100.0,
-                    prefix="loss")
+            event = [self.createEvent('critical', 'Unable to resolve %s' % host, 100,
+                prefix="loss")]
 
         defer.returnValue(event)
-
