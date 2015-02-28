@@ -11,6 +11,7 @@ from twisted.internet.udp import Port
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet.interfaces import ISystemHandle
 
+
 class IP(object):
     """IP header decoder
     """
@@ -22,6 +23,8 @@ class IP(object):
         l = (vl & 0xf) * 4
 
         head = packet[:l]
+        self.offset = struct.unpack('!H', packet[6:8])
+
         self.payload = packet[l:]
 
 class EchoPacket(object):
@@ -65,15 +68,14 @@ class EchoPacket(object):
         chk = struct.pack('!H', chk)
 
         self.packet = head + chk + echo + self.data
-        
+
     def decodePacket(self, packet):
         self.type, self.code, self.chk, self.seq, self.id = struct.unpack(
-            '!bbhhh', packet[:8])
+            '!bbHHH', packet[:8])
 
         self.data = packet[8:]
 
-        bl = packet
-        rc = '%s\x00\x00%s' % (bl[:2], bl[4:])
+        rc = '%s\x00\x00%s' % (packet[:2], packet[4:])
         mychk = self.calculateChecksum(rc)
 
         if mychk == self.chk:
@@ -81,21 +83,26 @@ class EchoPacket(object):
         else:
             self.valid = False
 
+    def __repr__(self):
+        return "<type=%s code=%s chk=%s seq=%s data=%s valid=%s>" % (
+            self.type, self.code, self.chk, self.seq, len(self.data), self.valid)
+
 class ICMPPing(DatagramProtocol):
     """ICMP Ping implementation
     """
-    def __init__(self, d, dst, count, inter=0.2, maxwait=1000):
+    def __init__(self, d, dst, count, inter=0.2, maxwait=1000, size=64):
         self.deferred = d
         self.dst = dst
+        self.size = size - 36
         self.count = count
         self.seq = 0
         self.start = 0
         self.maxwait = maxwait
         self.inter = inter
-        self.t = task.LoopingCall(self.ping)
 
+        self.t = task.LoopingCall(self.ping)
         self.recv = []
-        
+
     def datagramReceived(self, datagram, address):
         now = int(time.time()*1000000)
         host, port = address
@@ -108,18 +115,30 @@ class ICMPPing(DatagramProtocol):
             ts = icmp.data[:8]
             data = icmp.data[8:]
             delta = (now - struct.unpack('!Q', ts)[0])/1000.0
-            
+
             self.maxwait = (self.maxwait + delta)/2.0
 
             self.recv.append((icmp.seq, delta))
 
-    def sendEchoRequest(self):
-        us = int(time.time()*1000000)
+    def createData(self, n):
+        s = ""
+        c = 33
+        for i in range(n):
+            s += chr(c)
+            if c < 126:
+                c += 1
+            else:
+                c = 33
+        return s
 
-        pkt = EchoPacket(
-            seq=self.seq, 
-            id=123+self.seq, 
-            data='%s123456' % struct.pack('!Q', us))
+    def sendEchoRequest(self):
+        # Pack the packet with an ascii table
+        md = self.createData(self.size)
+
+        us = int(time.time()*1000000)
+        data = '%s%s' % (struct.pack('!Q', us), md)
+
+        pkt = EchoPacket(seq=self.seq, id=123+self.seq, data=data)
 
         self.transport.write(pkt.packet)
         self.seq += 1
@@ -142,7 +161,10 @@ class ICMPPing(DatagramProtocol):
         r = len(self.recv)
         loss = (self.count - r) / float(self.count)
         loss = int(100*loss)
-        avgLatency = sum([i[1] for i in self.recv]) / float(r)
+        if r:
+            avgLatency = sum([i[1] for i in self.recv]) / float(r)
+        else:
+            avgLatency = None
 
         self.transport.loseConnection()
         self.deferred.callback((loss, avgLatency))
@@ -154,9 +176,6 @@ class ICMPPing(DatagramProtocol):
 
     def startProtocol(self):
         self.startPing()
-
-    def connectionRefused(self):
-        print "Connection refused ..."
 
 class ICMPPort(Port):
     """Raw socket listener for ICMP
@@ -174,14 +193,14 @@ class ICMPPort(Port):
         fd = s.fileno()
 
         # Set close-on-exec
-        
+
         flags = fcntl.fcntl(fd, fcntl.F_GETFD)
         flags = flags | fcntl.FD_CLOEXEC
         fcntl.fcntl(fd, fcntl.F_SETFD, flags)
 
         return s
 
-def ping(dst, count, inter=0.2, maxwait=1000):
+def ping(dst, count, inter=0.2, maxwait=1000, size=64):
     """Sends ICMP echo requests to destination `dst` `count` times.
     Returns a deferred which fires when responses are finished.
     """
@@ -190,7 +209,7 @@ def ping(dst, count, inter=0.2, maxwait=1000):
         return result
 
     d = defer.Deferred()
-    p = ICMPPort(0, ICMPPing(d, dst, count, inter, maxwait), "", 8192, reactor)
+    p = ICMPPort(0, ICMPPing(d, dst, count, inter, maxwait, size), "", 8192, reactor)
     p.startListening()
 
     return d.addCallback(_then, p)
