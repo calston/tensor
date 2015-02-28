@@ -12,7 +12,7 @@ from twisted.internet.interfaces import ISystemHandle
 
 # OMG SHUT UP
 class STFU(object):
-    msg = lambda x: None
+    msg = lambda x, y: None
 udp.log = STFU()
 
 class IP(object):
@@ -101,6 +101,7 @@ class ICMPPing(DatagramProtocol):
         self.count = count
         self.seq = 0
         self.start = 0
+        self.id_base = random.randint(0, 40000)
         self.maxwait = maxwait
         self.inter = inter
 
@@ -116,13 +117,15 @@ class ICMPPing(DatagramProtocol):
         icmp = EchoPacket(packet=packet.payload)
 
         if icmp.valid and icmp.code==0 and icmp.type==0:
-            ts = icmp.data[:8]
-            data = icmp.data[8:]
-            delta = (now - struct.unpack('!Q', ts)[0])/1000.0
+            # Check ID is from this pinger
+            if (icmp.id-icmp.seq) == self.id_base:
+                ts = icmp.data[:8]
+                data = icmp.data[8:]
+                delta = (now - struct.unpack('!Q', ts)[0])/1000.0
 
-            self.maxwait = (self.maxwait + delta)/2.0
+                self.maxwait = (self.maxwait + delta)/2.0
 
-            self.recv.append((icmp.seq, delta))
+                self.recv.append((icmp.seq, delta))
 
     def createData(self, n):
         s = ""
@@ -142,7 +145,7 @@ class ICMPPing(DatagramProtocol):
         us = int(time.time()*1000000)
         data = '%s%s' % (struct.pack('!Q', us), md)
 
-        pkt = EchoPacket(seq=self.seq, id=123+self.seq, data=data)
+        pkt = EchoPacket(seq=self.seq, id=self.id_base+self.seq, data=data)
 
         self.transport.write(pkt.packet)
         self.seq += 1
