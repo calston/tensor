@@ -6,11 +6,12 @@ import struct
 
 from zope.interface import implements
 
-from twisted.internet import task, defer, reactor
-from twisted.internet.udp import Port
+from twisted.internet import task, defer, reactor, udp
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet.interfaces import ISystemHandle
 
+# OMG SHUT UP
+udp.log = lambda x: None
 
 class IP(object):
     """IP header decoder
@@ -90,6 +91,7 @@ class EchoPacket(object):
 class ICMPPing(DatagramProtocol):
     """ICMP Ping implementation
     """
+    noisy=False
     def __init__(self, d, dst, count, inter=0.2, maxwait=1000, size=64):
         self.deferred = d
         self.dst = dst
@@ -166,7 +168,6 @@ class ICMPPing(DatagramProtocol):
         else:
             avgLatency = None
 
-        self.transport.loseConnection()
         self.deferred.callback((loss, avgLatency))
 
     def startPing(self):
@@ -177,7 +178,7 @@ class ICMPPing(DatagramProtocol):
     def startProtocol(self):
         self.startPing()
 
-class ICMPPort(Port):
+class ICMPPort(udp.Port):
     """Raw socket listener for ICMP
     """
     implements(ISystemHandle)
