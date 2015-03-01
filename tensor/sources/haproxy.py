@@ -63,16 +63,23 @@ class HAProxy(Source):
 
         authorization = b64encode('%s:%s' % (self.user, self.password))
 
-        body = yield HTTPRequest().getBody(self.url,
-            headers={
-                'User-Agent': ['Tensor'],
-                'Authorization': ['Basic ' + authorization]
-            }
-        )
-
-        body = body.lstrip('# ').split('\n')
-
         events = []
+
+        try:
+            body = yield HTTPRequest().getBody(self.url,
+                headers={
+                    'User-Agent': ['Tensor'],
+                    'Authorization': ['Basic ' + authorization]
+                }
+            )
+
+            body = body.lstrip('# ').split('\n')
+
+            events.append(self.createEvent('ok',
+                'Connection ok', 1, prefix='state'))
+        except Exception, e:
+            defer.returnValue(self.createEvent('critical',
+                'Connection failed: %s' % (str(e)), 0, prefix='state'))
 
         c = csv.DictReader(body, delimiter=',')
         for row in c:

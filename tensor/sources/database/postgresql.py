@@ -96,9 +96,18 @@ class PostgreSQL(Source):
                             aggregation=Counter64)
                         )
 
-            p.close()
+            yield p.close()
+
+            defer.returnValue(self.createEvent('ok', 'Connection ok', 1,
+                prefix='state'))
 
         except exceptions.ImportError:
             log.msg('tensor.sources.database.postgresql.PostgreSQL'
                 ' requires psycopg2')
             defer.returnValue(None)
+        except Exception, e:
+            defer.returnValue(self.createEvent('critical',
+                'Connection error: %s' % str(e).replace('\n',' '),
+                0, prefix='state')
+            )
+
