@@ -1,7 +1,7 @@
 """
-.. module:: nginx
+.. module:: haproxy
    :platform: Unix
-   :synopsis: A source module for nginx stats
+   :synopsis: A source module for haproxy stats
 
 .. moduleauthor:: Colin Alston <colin@imcol.in>
 """

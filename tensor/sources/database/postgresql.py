@@ -1,7 +1,7 @@
 """
-.. module:: nginx
+.. module:: postgresql
    :platform: Unix
-   :synopsis: A source module for nginx stats
+   :synopsis: A source module for postgres stats
 
 .. moduleauthor:: Colin Alston <colin@imcol.in>
 """
