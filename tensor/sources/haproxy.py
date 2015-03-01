@@ -113,6 +113,16 @@ class HAProxy(Source):
                     '%s.bytes_in' % p),
                 self._ev(int(row['bout'])*8, 'Bytes out',
                     '%s.bytes_out' % p),
+                self._ev(row['hrsp_1xx'], '1xx codes',
+                    '%s.code_1xx' % p),
+                self._ev(row['hrsp_2xx'], '2xx codes',
+                    '%s.code_2xx' % p),
+                self._ev(row['hrsp_3xx'], '3xx codes',
+                    '%s.code_3xx' % p),
+                self._ev(row['hrsp_4xx'], '4xx codes',
+                    '%s.code_4xx' % p),
+                self._ev(row['hrsp_5xx'], '5xx codes',
+                    '%s.code_5xx' % p),
             ])
 
         defer.returnValue([e for e in events if e])
