@@ -9,9 +9,16 @@ tensor.sources.network
    :show-inheritance:
 
 tensor.sources.nginx
-======================
+====================
 
 .. automodule:: tensor.sources.nginx
+   :members:
+   :show-inheritance:
+
+tensor.sources.haproxy
+======================
+
+.. automodule:: tensor.sources.haproxy
    :members:
    :show-inheritance:
 
@@ -30,14 +37,14 @@ tensor.sources.riak
    :show-inheritance:
 
 tensor.sources.riemann
-===================
+======================
 
 .. automodule:: tensor.sources.riemann
    :members:
    :show-inheritance:
 
 tensor.sources.rabbitmq
-===================
+=======================
 
 .. automodule:: tensor.sources.rabbitmq
    :members:
@@ -54,7 +61,7 @@ tensor.sources.linux.basic
    :show-inheritance:
 
 tensor.sources.linux.process
---------------------------
+----------------------------
 
 .. automodule:: tensor.sources.linux.process
    :members:
