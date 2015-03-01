@@ -186,9 +186,9 @@ class TensorService(service.Service):
                     tDelta = ev.time - lastTime
                     m = ev.aggregation(
                         lastM, ev.metric, tDelta)
-
-                    ev.metric = m
-                    queue.append(ev)
+                    if m:
+                        ev.metric = m
+                        queue.append(ev)
 
                 self.evCache[id] = (thisM, ev.time)
             else:

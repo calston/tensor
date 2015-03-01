@@ -19,4 +19,7 @@ def Counter64(a, b, delta):
 def Counter(a, b, delta):
     """Counter derivative
     """
+    if b < a:
+        return None 
+
     return (b - a) / float(delta)
