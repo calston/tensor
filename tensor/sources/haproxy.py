@@ -25,18 +25,16 @@ class HAProxy(Source):
 
     **Configuration arguments:**
     
-    :param stats_url: URL to fetch stub_status from
-    :type stats_url: str.
+    :param url: URL to fetch stats from
+    :type url: str.
+    :param user: Username
+    :type user: str.
+    :param password: Password
+    :type password: str.
 
     **Metrics:**
 
-    :(service name).active: Active connections at this time
-    :(service name).accepts: Accepted connections
-    :(service name).handled: Handled connections
-    :(service name).requests: Total client requests
-    :(service name).reading: Reading requests
-    :(service name).writing: Writing responses
-    :(service name).waiting: Waiting connections
+    :(service name).(backend|frontend|nodes).(stats): Various statistics
     """
 
     implements(ITensorSource)
