@@ -194,7 +194,6 @@ class TensorService(service.Service):
             else:
                 queue.append(ev)
 
-
         return queue
 
     def setStates(self, source, queue):
