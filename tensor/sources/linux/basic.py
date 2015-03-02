@@ -1,3 +1,5 @@
+import time
+
 from zope.interface import implements
 
 from twisted.internet import defer
@@ -24,11 +26,109 @@ class LoadAverage(Source):
 
 
 class DiskIO(Source):
+    """Reports disk IO statistics per device
+
+    **Metrics:**
+
+    :(service name).(device name).reads: Number of completed reads
+    :(service name).(device name).read_bytes: Bytes read per second
+    :(service name).(device name).read_latency: Disk read latency
+    :(service name).(device name).writes: Number of completed writes
+    :(service name).(device name).write_bytes: Bytes written per second
+    :(service name).(device name).write_latency: Disk write latency
+    """
+
     implements(ITensorSource)
 
+    def __init__(self, *a, **kw):
+        Source.__init__(self, *a, **kw)
+
+        self.tcache = {}
+        self.trc = {}
+        self.twc = {}
+
+    def _getstats(self):
+        stats = open('/proc/diskstats', 'rt').read()
+
+        return stats.strip('\n').split('\n')
+
     def get(self):
-        # I can't think of a useful way to filter /proc/diskstats right now
-        return None
+        disks = {}
+        events = []
+
+        stats = self._getstats()
+
+
+        for s in stats:
+            parts = s.strip().split()
+            n = parts[2]
+            # Filter things we don't care about
+            if (n[:4] != 'loop') and (n[:3] != 'ram'):
+                nums = [int(i) for i in parts[3:]]
+
+                reads, read_m, read_sec, read_t = nums[:4]
+                writes, write_m, write_sec, write_t = nums[4:8]
+                cur_io, io_t, io_wt = nums[8:]
+
+                # Calculate the average latency of read/write ops
+                if n in self.tcache:
+                    (last_r, last_w, last_rt, last_wt) = self.tcache[n]
+
+                    r_delta = float(reads - last_r)
+                    w_delta = float(writes - last_w)
+
+                    if r_delta > 0:
+                        read_lat = (read_t - last_rt)/float(reads - last_r)
+                        self.trc[n] = read_lat
+                    else:
+                        read_lat = self.trc.get(n, None)
+
+                    if w_delta > 0:
+                        write_lat = (write_t - last_wt)/float(writes - last_w)
+                        self.twc[n] = write_lat
+                    else:
+                        write_lat = self.twc.get(n, None)
+
+                else:
+                    if reads > 0:
+                        read_lat = read_t / float(reads)
+                        self.trc[n] = read_lat
+                    else:
+                        read_lat = None
+
+                    if writes > 0:
+                        write_lat = write_t / float(writes)
+                        self.twc[n] = write_lat
+                    else:
+                        write_lat = None
+
+                self.tcache[n] = (reads, writes, read_t, write_t)
+
+                n = "/dev/" + n
+
+                if read_lat:
+                     events.append(self.createEvent('ok',
+                        'Read latency (ms)', read_lat,
+                        prefix='%s.read_latency' % n))
+
+                if write_lat:
+                     events.append(self.createEvent('ok',
+                        'Write latency (ms)', write_lat,
+                        prefix='%s.write_latency' % n))
+
+                events.extend([
+                    self.createEvent('ok', 'Reads' , reads,
+                        prefix='%s.reads' % n, aggregation=Counter64),
+                    self.createEvent('ok', 'Read Bps' , read_sec * 512,
+                        prefix='%s.read_bytes' % n, aggregation=Counter64),
+
+                    self.createEvent('ok', 'Writes', writes,
+                        prefix='%s.writes' % n, aggregation=Counter64),
+                    self.createEvent('ok', 'Write Bps', write_sec * 512,
+                        prefix='%s.write_bytes' % n, aggregation=Counter64),
+                ])
+
+        return events
 
 
 class CPU(Source):

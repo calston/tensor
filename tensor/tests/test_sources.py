@@ -75,6 +75,27 @@ class TestLinuxSources(unittest.TestCase):
         self.assertEqual(iowait_event.service, 'cpu.iowait')
         self.assertEqual(round(iowait_event.metric, 4), 0.1699)
 
+    def test_disk_io(self):
+        s = basic.DiskIO({
+            'interval': 1.0,
+            'service': 'disk',
+            'ttl': 60,
+            'hostname': 'localhost'}, self._qb, None)
+
+        stats = [
+            '   1       0 ram0 0 0 0 0 0 0 0 0 0 0 0',
+            '   7       0 loop0 0 0 0 0 0 0 0 0 0 0 0',
+            ' 202       2 xvda2 2 0 4 64 0 0 0 0 0 64 64',
+            ' 202      32 xvdc 576 10 3739 748 144 0 4497 18080 0 8616 18828',
+            ' 202      33 xvdc1 423 0 2435 264 144 0 4497 18080 0 8132 18344',
+        ]
+
+        s._getstats = lambda: stats
+        events = s.get()
+
+        self.assertEqual(events[0].metric, 32)
+        self.assertEqual(events[1].metric, 2)
+
     def test_basic_memory(self):
         self.skip_if_no_hostname()
         s = basic.Memory(
