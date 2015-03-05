@@ -9,6 +9,7 @@ from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 from tensor.utils import fork
 
+
 class Queues(Source):
     """Returns Queue information for a particular vhost
 
@@ -55,11 +56,13 @@ class Queues(Source):
             total_ready = 0
             total_unack = 0
 
-            rows = out.strip('\n').split('\n')[1:-1]
+            rows = out.strip('\n').split('\n')
 
             events = []
 
             for row in rows:
+                if ("..." in row):
+                    continue
                 name, ready, unack = row.split()
                 ready = int(ready)
                 unack = int(unack)
