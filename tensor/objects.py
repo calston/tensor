@@ -23,7 +23,7 @@ class Event(object):
     :param evtime: Event timestamp override
     """
     def __init__(self, state, service, description, metric, ttl, tags=[],
-            hostname=None, aggregation=None, evtime=None):
+            hostname=None, aggregation=None, evtime=None, type='riemann'):
         self.state = state
         self.service = service
         self.description = description
@@ -31,6 +31,7 @@ class Event(object):
         self.ttl = ttl
         self.tags = tags
         self.aggregation = aggregation
+        self._type = type
         
         if evtime:
             self.time = evtime
@@ -187,6 +188,13 @@ class Source(object):
         return Event(state, service_name, description, metric, self.ttl,
             hostname=hostname or self.hostname, aggregation=aggregation,
             evtime=evtime, tags=self.tags
+        )
+
+    def createLog(self, type, data, evtime=None, hostname=None):
+        """Creates an Event object from the Source configuration"""
+
+        return Event(None, type, data, 0, self.ttl,
+            hostname=hostname or self.hostname, evtime=evtime, tags=self.tags, type='log'
         )
 
     def get(self):

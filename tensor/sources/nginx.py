@@ -210,3 +210,54 @@ class NginxLogMetrics(Source):
         self.log.get_fn(self.got_line, max_lines=self.max_lines)
 
         self.dumpEvents(float(self.bucket))
+
+class NginxLog(Source):
+    """Tails Nginx log files, parses them and returns log events for outputs
+    which support them.
+
+    **Configuration arguments:**
+    
+    :param log_format: Log format passed to parser, same as the config
+                       definition (default: combined)
+    :type log_format: str.
+    :param file: Log file
+    :type file: str.
+    :param max_lines: Maximum number of log lines to read per interval to
+                      prevent overwhelming Tensor when reading large logs
+                      (default 2000)
+    :type max_lines: int.
+    """
+
+    implements(ITensorSource)
+
+    # Don't allow overlapping runs
+    sync = True
+
+    def __init__(self, *a):
+        Source.__init__(self, *a)
+
+        self.parser = parsers.ApacheLogParser(self.config.get('log_format', 'combined'))
+
+        self.log = follower.LogFollower(self.config['file'],
+            parser=self._parser_proxy, history=False)
+
+        self.max_lines = int(self.config.get('max_lines', 2000))
+
+    def got_eventlog(self, event):
+        self.queueBack(event)
+
+    def _parser_proxy(self, line):
+        """Parses log lines and returns a `log` type Event object
+        """
+        d = self.parser.parse(line)
+
+        t = time.mktime(d['time'].timetuple())
+        #d['@timestamp'] = t
+        d['time'] = str(t)
+
+        d['message'] = line
+
+        return self.createLog('nginx', d, t)
+
+    def get(self):
+        self.log.get_fn(self.got_eventlog, max_lines=self.max_lines)

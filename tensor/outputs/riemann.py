@@ -1,5 +1,4 @@
 import time
-import sys
 
 from twisted.internet import reactor, defer, task
 from twisted.python import log

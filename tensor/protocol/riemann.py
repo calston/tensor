@@ -36,7 +36,7 @@ class RiemannProtobufMixin(object):
         """Encode a list of Tensor events with protobuf"""
 
         message = proto_pb2.Msg(
-            events=[self.encodeEvent(e) for e in events]
+            events=[self.encodeEvent(e) for e in events if e._type=='riemann']
         )
 
         return message.SerializeToString()
