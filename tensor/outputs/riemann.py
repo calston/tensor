@@ -60,6 +60,7 @@ class RiemannTCP(Output):
         self.inter = float(self.config.get('interval', 1.0))  # tick interval
         self.pressure = int(self.config.get('pressure', -1))
         self.maxsize = int(self.config.get('maxsize', 250000))
+        self.expire = self.config.get('expire', False)
 
         maxrate = int(self.config.get('maxrate', 0))
 
@@ -122,7 +123,7 @@ class RiemannTCP(Output):
             # Check backpressure
             if (self.pressure < 0) or (self.factory.proto.pressure <= self.pressure):
                 self.emptyQueue()
-        else:
+        elif self.expire:
             # Check queue age and expire stale events
             for i, e in enumerate(self.events):
                 if (time.time() - e.time) > e.ttl:
