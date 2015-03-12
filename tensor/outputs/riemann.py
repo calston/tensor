@@ -39,6 +39,8 @@ class RiemannTCP(Output):
     :type port: int.
     :param maxrate: Maximum de-queue rate (0 is no limit)
     :type maxrate: int.
+    :param maxsize: Maximum queue size (0 is no limit, default is 250000)
+    :type maxsize: int.
     :param interval: De-queue interval in seconds (default: 1.0)
     :type interval: float.
     :param pressure: Maximum backpressure (-1 is no limit)
@@ -57,6 +59,7 @@ class RiemannTCP(Output):
 
         self.inter = float(self.config.get('interval', 1.0))  # tick interval
         self.pressure = int(self.config.get('pressure', -1))
+        self.maxsize = int(self.config.get('maxsize', 250000))
 
         maxrate = int(self.config.get('maxrate', 0))
 
@@ -145,8 +148,9 @@ class RiemannTCP(Output):
         Arguments:
         events -- list of `tensor.objects.Event`
         """
-
-        self.events.extend(events)
+        # Make sure queue isn't oversized
+        if (self.maxsize < 1) or (len(self.events) < self.maxsize):
+            self.events.extend(events)
 
 class RiemannUDP(Output):
     """Riemann UDP output (spray-and-pray mode)

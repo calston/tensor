@@ -248,6 +248,8 @@ class TensorService(service.Service):
 
             self.routeEvent(source, queue)
 
+        queue = []
+
         self.lastEvents[source] = time.time()
 
     def _startSource(self, source):
