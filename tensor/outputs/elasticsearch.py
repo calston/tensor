@@ -67,6 +67,7 @@ class ElasticSearchLog(Output):
         d = event.description
         d['type'] = event.service
         d['host'] = event.hostname
+        d['tags'] = event.tags
 
         if event._type=='log':
             return d
