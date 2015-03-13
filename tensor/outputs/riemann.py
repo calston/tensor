@@ -132,7 +132,6 @@ class RiemannTCP(Output):
         """Remove all or self.queueDepth events from the queue
         """
         if self.events:
-            if self.queueDepth:
             if self.queueDepth and (len(self.events) > self.queueDepth):
                 # Remove maximum of self.queueDepth items from queue
                 events = self.events[:self.queueDepth]
