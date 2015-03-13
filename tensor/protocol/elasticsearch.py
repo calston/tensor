@@ -1,42 +1,43 @@
 import time
 import uuid
 import json
-import base64
+from base64 import b64encode
 
 from tensor import utils
 
 class ElasticSearch(object):
     """Twisted ElasticSearch API
     """
-
-    def __init__(self, host='127.0.0.1', port=9200, index='logstash-%Y.%m.%d'):
-        self.host = host
-        self.port = port
+    def __init__(self, url='http://localhost:9200', user=None, password=None,
+                 index='logstash-%Y.%m.%d'):
+        self.url = url.rstrip('/')
         self.index = index
+        self.user = user
+        self.password = password
 
     def _get_index(self):
         return time.strftime(self.index)
-        
-    def _request(self, path, data=None, method='GET'):
 
-        url = 'http://%s:%s/' % (
-            self.host, self.port)
+    def _request(self, path, data=None, method='GET'):
+        headers = {}
+        if self.user:
+            authorization = b64encode('%s:%s' % (self.user, self.password))
+            headers['Authorization'] = ['Basic ' + authorization]
 
         return utils.HTTPRequest().getJson(
-            url + path, method, data=data)
-        
+            self.url + path, method, headers=headers, data=data)
+
     def _gen_id(self):
-        return base64.b64encode(uuid.uuid4().bytes).rstrip('=')
-        
-    
+        return b64encode(uuid.uuid4().bytes).rstrip('=')
+
     def insertIndex(self, type, data):
-        return self._request('%s/%s/%s' % (
+        return self._request('/%s/%s/%s' % (
                 self._get_index(), type, self._gen_id()
             ), json.dumps(data), 'PUT')
-        
+
     def bulkIndex(self, data):
         serdata = ""
-        
+
         for row in data:
             if '_id' in row:
                 id = row['id']
@@ -54,4 +55,4 @@ class ElasticSearch(object):
             serdata += json.dumps(d) + '\n'
             serdata += json.dumps(row) + '\n'
 
-        return self._request('_bulk', serdata.rstrip('\n'), 'PUT')
+        return self._request('/_bulk', serdata.rstrip('\n'), 'PUT')

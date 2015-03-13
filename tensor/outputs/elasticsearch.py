@@ -21,16 +21,18 @@ class ElasticSearchLog(Output):
 
     **Configuration arguments:**
 
-    :param server: Elasticsearch server
-    :type server: str
-    :param port: Elasticsearch server port (default: 9200)
-    :type port: int
+    :param url: Elasticsearch URL (default: http://localhost:9200)
+    :type url: str
     :param maxsize: Maximum queue backlog size (default: 250000, 0 disables)
     :type maxsize: int
     :param maxrate: Maximum rate of documents added to index (default: 100)
     :type maxrate: int
     :param interval: Queue check interval in seconds (default: 1.0)
     :type interval: int
+    :param user: Optional basic auth username
+    :type user: str
+    :param password: Optional basic auth password
+    :type password: str
     """
     def __init__(self, *a):
         Output.__init__(self, *a)
@@ -39,6 +41,11 @@ class ElasticSearchLog(Output):
 
         self.inter = float(self.config.get('interval', 1.0))  # tick interval
         self.maxsize = int(self.config.get('maxsize', 250000))
+
+        self.user = self.config.get('user')
+        self.password = self.config.get('password')
+
+        self.url = self.config.get('url', 'http://localhost:9200')
 
         maxrate = int(self.config.get('maxrate', 100))
 
@@ -54,7 +61,8 @@ class ElasticSearchLog(Output):
         server = self.config.get('server', 'localhost')
         port = int(self.config.get('port', 9200))
 
-        self.client = elasticsearch.ElasticSearch(host=server, port=port)
+        self.client = elasticsearch.ElasticSearch(self.url, self.user,
+            self.password)
 
         self.t.start(self.inter)
 
