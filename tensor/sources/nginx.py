@@ -7,6 +7,7 @@
 """
 
 import time
+import datetime
 
 from twisted.internet import defer
 
@@ -252,9 +253,9 @@ class NginxLog(Source):
         d = self.parser.parse(line)
 
         t = time.mktime(d['time'].timetuple())
-        #d['@timestamp'] = t
-        d['time'] = str(t)
 
+        d['@timestamp'] = datetime.datetime.utcfromtimestamp(t).isoformat()
+        d['time'] = str(d['time'])
         d['message'] = line
 
         return self.createLog('nginx', d, t)

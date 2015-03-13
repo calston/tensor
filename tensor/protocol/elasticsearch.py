@@ -18,9 +18,6 @@ class ElasticSearch(object):
         return time.strftime(self.index)
         
     def _request(self, path, data=None, method='GET'):
-        if data:
-            data = json.dumps(data)
-
 
         url = 'http://%s:%s/' % (
             self.host, self.port)
@@ -35,7 +32,7 @@ class ElasticSearch(object):
     def insertIndex(self, type, data):
         return self._request('%s/%s/%s' % (
                 self._get_index(), type, self._gen_id()
-            ), data, 'PUT')
+            ), json.dumps(data), 'PUT')
         
     def bulkIndex(self, data):
         serdata = ""
@@ -57,7 +54,4 @@ class ElasticSearch(object):
             serdata += json.dumps(d) + '\n'
             serdata += json.dumps(row) + '\n'
 
-        print 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-        print serdata
-
-        return self._request('_bulk/', serdata.rstrip('\n'), 'PUT')
+        return self._request('_bulk', serdata.rstrip('\n'), 'PUT')
