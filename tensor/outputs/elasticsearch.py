@@ -84,8 +84,9 @@ class ElasticSearchLog(Output):
     def tick(self):
         """Clock tick called every self.inter
         """
+        print "tick"
         if self.events:
-            if self.queueDepth:
+            if self.queueDepth and (len(self.events) > self.queueDepth):
                 # Remove maximum of self.queueDepth items from queue
                 events = self.events[:self.queueDepth]
                 self.events = self.events[self.queueDepth:]
@@ -93,10 +94,12 @@ class ElasticSearchLog(Output):
                 events = self.events
                 self.events = []
 
-            result = yield self.sendEvents(events)
-
-            if result.get('errors', False):
-                log.msg(repr(result))
+            try:
+                result = yield self.sendEvents(events)
+                if result.get('errors', False):
+                    log.msg(repr(result))
+            except Exception, e:
+                log.msg('Could not connect to elasticsearch ' + str(e))
 
     def eventsReceived(self, events):
         """Receives a list of events and queues them
