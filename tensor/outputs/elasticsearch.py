@@ -75,16 +75,13 @@ class ElasticSearchLog(Output):
         return None
 
     def sendEvents(self, events):
-        for i, e in enumerate(events):
-            events[i] = self.transposeEvent(e)
-
-        return self.client.bulkIndex(events)
+        return self.client.bulkIndex(
+            [self.transposeEvent(e) for e in events])
 
     @defer.inlineCallbacks
     def tick(self):
         """Clock tick called every self.inter
         """
-        print "tick"
         if self.events:
             if self.queueDepth and (len(self.events) > self.queueDepth):
                 # Remove maximum of self.queueDepth items from queue
@@ -98,8 +95,11 @@ class ElasticSearchLog(Output):
                 result = yield self.sendEvents(events)
                 if result.get('errors', False):
                     log.msg(repr(result))
+                    self.events.extend(events)
+
             except Exception, e:
                 log.msg('Could not connect to elasticsearch ' + str(e))
+                self.events.extend(events)
 
     def eventsReceived(self, events):
         """Receives a list of events and queues them
