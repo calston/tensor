@@ -36,7 +36,7 @@ class ApacheLogParser:
             '%a': ('client-ip', str),
             '%b': ('bytes', int),
             '%B': ('bytes', int),
-            '%D': ('request-time', float),
+            '%D': ('request-time', int),
             '%T': ('request-time', float),
             '%f': ('filename', str),
             '%l': ('logname', str),
