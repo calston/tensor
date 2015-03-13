@@ -257,6 +257,7 @@ class NginxLog(Source):
         d['@timestamp'] = datetime.datetime.utcfromtimestamp(t).isoformat()
         d['time'] = str(d['time'])
         d['message'] = line
+        d['logname'] = self.config['file']
 
         return self.createLog('nginx', d, t)
 
