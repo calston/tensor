@@ -95,7 +95,8 @@ class ElasticSearchLog(Output):
 
             result = yield self.sendEvents(events)
 
-            log.msg(repr(result))
+            if result.get('errors', False):
+                log.msg(repr(result))
 
     def eventsReceived(self, events):
         """Receives a list of events and queues them
