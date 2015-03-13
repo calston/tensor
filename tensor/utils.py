@@ -13,6 +13,7 @@ from twisted.web.client import Agent
 from twisted.names import client
 from twisted.python import log
 
+
 class Timeout(Exception):
     """
     Raised to notify that an operation exceeded its timeout.
@@ -140,17 +141,27 @@ def fork(executable, args=(), env={}, path=None, timeout=3600):
     reactor.spawnProcess(p, executable, (executable,)+tuple(args), env, path)
     return d
 
+try:
+    from twisted.internet.ssl import ClientContextFactory
+
+    class WebClientContextFactory(ClientContextFactory):
+        def getContext(self, hostname, port):
+            return ClientContextFactory.getContext(self)
+    SSL=True
+except:
+    SSL=False
+
 
 class HTTPRequest(object):
     def __init__(self, timeout=120):
         self.timeout = timeout
 
-    def abort_request(self, agent):
+    def abort_request(self, request):
         """Called to abort request on timeout"""
         self.timedout = True
-        if not agent.called:
+        if not request.called:
             try:
-                agent.cancel()
+                request.cancel()
             except error.AlreadyCancelled:
                 return
         
@@ -168,14 +179,23 @@ class HTTPRequest(object):
 
     def request(self, url, method='GET', headers={}, data=None):
         self.timedout = False
-        agent = Agent(reactor).request(method, url,
+
+        if url[:5] == 'https':
+            if SSL:
+                agent = Agent(reactor, WebClientContextFactory())
+            else:
+                raise Exception('HTTPS requested but not supported')
+        else:
+            agent = Agent(reactor)
+        
+        request = agent.request(method, url,
             Headers(headers),
             StringProducer(data) if data else None
         )
 
         if self.timeout:
             timer = reactor.callLater(self.timeout, self.abort_request,
-                agent)
+                request)
 
             def timeoutProxy(request):
                 if timer.active():
@@ -192,11 +212,11 @@ class HTTPRequest(object):
                 raise Timeout(
                     "Request took longer than %s seconds" % self.timeout)
 
-            agent.addCallback(timeoutProxy).addErrback(requestAborted)
+            request.addCallback(timeoutProxy).addErrback(requestAborted)
         else:
-            agent.addCallback(self.response)
+            request.addCallback(self.response)
 
-        return agent
+        return request
 
 
     def getBody(self, url, method='GET', headers={}, data=None):
