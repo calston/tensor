@@ -1,6 +1,13 @@
 tensor
 ******
 
+tensor.aggregators
+==================
+
+.. automodule:: tensor.aggregators
+   :members:
+   :show-inheritance:
+
 tensor.interfaces
 =================
 

@@ -1,6 +1,20 @@
 tensor.protocol
 ***************
 
+tensor.protocol.elasticsearch
+=============================
+
+.. automodule:: tensor.protocol.elasticsearch
+   :members:
+   :show-inheritance:
+
+tensor.protocol.icmp
+====================
+
+.. automodule:: tensor.protocol.icmp
+   :members:
+   :show-inheritance:
+
 tensor.protocol.riemann
 =======================
 
