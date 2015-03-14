@@ -55,7 +55,7 @@ class ElasticSearchLog(Output):
             self.queueDepth = None
 
     def createClient(self):
-        """Create a TCP connection to Riemann with automatic reconnection
+        """Sets up HTTP connector and starts queue timer
         """
 
         server = self.config.get('server', 'localhost')
