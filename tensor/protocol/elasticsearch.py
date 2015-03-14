@@ -30,6 +30,9 @@ class ElasticSearch(object):
     def _gen_id(self):
         return b64encode(uuid.uuid4().bytes).rstrip('=')
 
+    def stats(self):
+        return self._request('/_cluster/stats')
+
     def insertIndex(self, type, data):
         return self._request('/%s/%s/%s' % (
                 self._get_index(), type, self._gen_id()
