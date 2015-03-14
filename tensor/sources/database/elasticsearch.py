@@ -63,7 +63,7 @@ class ElasticSearch(Source):
         shards_primary = stats['indices']['shards']['primaries']
 
         docs = stats['indices']['docs']['count']
-        store = stats['store']['size_in_bytes']
+        store = stats['indices']['store']['size_in_bytes']
 
         defer.returnValue([
             self.createEvent('ok', 'Status', status, prefix='cluster.status'),
