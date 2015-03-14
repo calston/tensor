@@ -151,6 +151,12 @@ try:
 except:
     SSL=False
 
+try:
+    from twisted.web import client
+    client._HTTP11ClientFactory.noisy = False
+    client.HTTPClientFactory.noisy = False
+except:
+    pass
 
 class HTTPRequest(object):
     def __init__(self, timeout=120):
