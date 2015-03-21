@@ -33,6 +33,9 @@ class ElasticSearch(object):
     def stats(self):
         return self._request('/_cluster/stats')
 
+    def node_stats(self):
+        return self._request('/_nodes/stats')
+
     def insertIndex(self, type, data):
         return self._request('/%s/%s/%s' % (
                 self._get_index(), type, self._gen_id()

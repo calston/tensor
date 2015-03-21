@@ -54,6 +54,7 @@ class ElasticSearch(Source):
     @defer.inlineCallbacks
     def get(self):
         stats = yield self.client.stats()
+        node_stats = yield self.client.node_stats()
 
         status = {'green': 2, 'yellow': 1, 'red': 0}[stats['status']]
     
@@ -65,14 +66,34 @@ class ElasticSearch(Source):
         docs = stats['indices']['docs']['count']
         store = stats['indices']['store']['size_in_bytes']
 
-        defer.returnValue([
+        events = [
             self.createEvent('ok', 'Status', status, prefix='cluster.status'),
             self.createEvent('ok', 'Nodes', nodes, prefix='cluster.nodes'),
             self.createEvent('ok', 'Indices', index_count, prefix='indices'),
             self.createEvent('ok', 'Shards', shards, prefix='shards.total'),
             self.createEvent('ok', 'Primary shards', shards_primary, prefix='shards.primary'),
-
             self.createEvent('ok', 'Documents', shards_primary, prefix='documents.total'),
             self.createEvent('ok', 'Documents', shards_primary, prefix='documents.rate', aggregation=Counter64),
             self.createEvent('ok', 'Store size', store, prefix='documents.size'),
-        ])
+        ]
+
+        nodes = {}
+
+        for k, v in node_stats['nodes'].items():
+            node_name = v['host']
+
+            if node_name not in nodes:
+                nodes[node_name] = {
+                    'search': v['indices']['search']['query_total'],
+                    'delete': v['indices']['indexing']['delete_total'],
+                    'index': v['indices']['indexing']['index_total'],
+                    'get': v['indices']['get']['total']
+                }
+
+        for node, ms in nodes.items():
+            for mname, m in ms.items():
+                events.append(self.createEvent(
+                    'ok', mname, m, prefix='nodes.%s.%s' % (node, mname)))
+
+        defer.returnValue(events)
+
