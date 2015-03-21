@@ -82,6 +82,9 @@ class ElasticSearch(Source):
         for k, v in node_stats['nodes'].items():
             node_name = v['host']
 
+            if v.get('attributes', {}).get('client', 'false') == 'true':
+                continue
+
             if node_name not in nodes:
                 nodes[node_name] = {
                     'search': v['indices']['search']['query_total'],
@@ -92,8 +95,9 @@ class ElasticSearch(Source):
 
         for node, ms in nodes.items():
             for mname, m in ms.items():
-                events.append(self.createEvent(
-                    'ok', mname, m, prefix='nodes.%s.%s' % (node, mname)))
+                events.append(self.createEvent('ok', mname, m, 
+                    prefix='nodes.%s.%s' % (node, mname),
+                    aggregation=Counter64))
 
         defer.returnValue(events)
 
