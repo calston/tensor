@@ -77,6 +77,28 @@ A list of events can also be returned but be careful of overwhelming the output
 buffer, and if you need to produce lots of metrics it may be worthwhile to
 return nothing from `get` and call `self.queueBack` as needed.
 
+Using custom sources
+====================
+
+When a source is specified, eg ::
+
+    source: tensor.sources.network.Ping
+
+Tensor will import and instantiate the `Ping` class from `tensor.sources.network`.
+Consequently a source can be any installed Python module.
+
+For the sake of convenience, however, Tensor also appends `/var/lib/tensor` to the
+Python path. This means you can easily create, test and distribute sources in that
+directory.
+
+For example, create the above `hello.py` file and place it in `/var/lib/tensor` then
+use the configuration ::
+
+    source: hello.HelloWorld
+
+You can also always submit Github pull request with sources to have them added to
+Tensor for others to benefit from!
+
 Handling asynchronous tasks
 ===========================
 
