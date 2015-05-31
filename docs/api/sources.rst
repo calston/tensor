@@ -53,6 +53,13 @@ tensor.sources.linux.process
    :members:
    :show-inheritance:
 
+tensor.sources.linux.sensors
+----------------------------
+
+.. automodule:: tensor.sources.linux.sensors
+   :members:
+   :show-inheritance:
+
 tensor.sources.media
 ====================
 
