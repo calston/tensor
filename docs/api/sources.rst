@@ -107,6 +107,13 @@ tensor.sources.rabbitmq
    :members:
    :show-inheritance:
 
+tensor.sources.redis
+=======================
+
+.. automodule:: tensor.sources.redis
+   :members:
+   :show-inheritance:
+
 tensor.sources.riak
 ===================
 
