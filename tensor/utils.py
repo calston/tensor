@@ -13,6 +13,16 @@ from twisted.web.client import Agent
 from twisted.names import client
 from twisted.python import log
 
+from twisted.internet.endpoints import clientFromString
+
+class SocketyAgent(Agent):
+    def __init__(self, reactor, path, **kwargs):
+        self.path = path
+        Agent.__init__(self, reactor, **kwargs)
+
+    def _getEndpoint(self, scheme, host, port):
+        client = clientFromString(reactor, self.path)
+        return client
 
 class Timeout(Exception):
     """
@@ -183,16 +193,19 @@ class HTTPRequest(object):
 
         defer.returnValue(body)
 
-    def request(self, url, method='GET', headers={}, data=None):
+    def request(self, url, method='GET', headers={}, data=None, socket=None):
         self.timedout = False
 
-        if url[:5] == 'https':
-            if SSL:
-                agent = Agent(reactor, WebClientContextFactory())
-            else:
-                raise Exception('HTTPS requested but not supported')
+        if socket:
+            agent = SocketyAgent(reactor, socket)
         else:
-            agent = Agent(reactor)
+            if url[:5] == 'https':
+                if SSL:
+                    agent = Agent(reactor, WebClientContextFactory())
+                else:
+                    raise Exception('HTTPS requested but not supported')
+            else:
+                agent = Agent(reactor)
         
         request = agent.request(method, url,
             Headers(headers),
@@ -225,22 +238,22 @@ class HTTPRequest(object):
         return request
 
 
-    def getBody(self, url, method='GET', headers={}, data=None):
+    def getBody(self, url, method='GET', headers={}, data=None, socket=None):
         """Make an HTTP request and return the body
         """
 
         if not 'User-Agent' in headers:
             headers['User-Agent'] = ['Tensor HTTP checker']
 
-        return self.request(url, method, headers, data)
+        return self.request(url, method, headers, data, socket)
 
     @defer.inlineCallbacks
-    def getJson(self, url, method='GET', headers={}, data=None):
+    def getJson(self, url, method='GET', headers={}, data=None, socket=None):
         """Fetch a JSON result via HTTP
         """
         if not 'Content-Type' in headers:
             headers['Content-Type'] = ['application/json']
 
-        body = yield self.getBody(url, method, headers, data)
+        body = yield self.getBody(url, method, headers, data, socket)
         
         defer.returnValue(json.loads(body))
