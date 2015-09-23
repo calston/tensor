@@ -20,7 +20,7 @@ from tensor.aggregators import Counter64
 
 
 class ContainerStats(Source):
-    """Returns GET/PUT rates for a Docker node
+    """Returns stats for Docker containers on this host
 
     **Configuration arguments:**
 
