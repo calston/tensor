@@ -22,6 +22,13 @@ tensor.sources.database.memcache
    :members:
    :show-inheritance:
 
+tensor.sources.docker
+=====================
+
+.. automodule:: tensor.sources.docker
+   :members:
+   :show-inheritance:
+
 tensor.sources.haproxy
 ======================
 
