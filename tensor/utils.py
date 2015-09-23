@@ -2,6 +2,9 @@ import signal
 import json
 import time
 import urllib
+import exceptions
+import os
+
 from StringIO import StringIO
 
 from zope.interface import implements
@@ -257,3 +260,99 @@ class HTTPRequest(object):
         body = yield self.getBody(url, method, headers, data, socket)
         
         defer.returnValue(json.loads(body))
+
+class PersistentCache(object):
+    """A very basic dictionary cache abstraction. Not to be used
+    for large amounts of data or high concurrency"""
+
+    def __init__(self, location='/var/lib/tensor/cache'):
+        self.store = {}
+        self.location = location
+        self.mtime = 0
+        self._read()
+
+    def _changed(self):
+        if os.path.exists(self.location):
+            mtime = os.stat(self.location).st_mtime
+
+            return self.mtime != mtime
+        else:
+            return False
+
+    def _acquire_cache(self):
+        try:
+            cache_file = open(self.location, 'r')
+        except exceptions.IOError:
+            return {}
+
+        cache = json.loads(cache_file.read())
+        cache_file.close()
+        return cache
+
+    def _write_cache(self, d):
+        cache_file = open(self.location, 'w')
+        cache_file.write(json.dumps(d))
+        cache_file.close()
+
+    def _persist(self):
+        cache = self._acquire_cache()
+
+        for k, v in self.store.iteritems():
+            cache[k] = v
+
+        self._write_cache(cache)
+
+    def _read(self):
+        cache = self._acquire_cache()
+        for k, v in cache.iteritems():
+            self.store[k] = v
+
+    def _remove_key(self, k):
+        cache = self._acquire_cache()
+        if k in cache:
+            if k in cache:
+                del cache[k]
+            if k in self.store:
+                del self.store[k]
+            self._write_cache(cache)
+
+    def expire(self, age):
+        """Expire any items in the cache older than `age` seconds"""
+        now = time.time()
+        cache = self._acquire_cache()
+        
+        expired = [k for k, v in cache.iteritems() if (now - v[0]) > age]
+
+        for k in expired:
+            if k in cache:
+                del cache[k]
+            if k in self.store:
+                del self.store[k]
+
+        self._write_cache(cache)
+
+    def set(self, k, v):
+        """Set a key `k` to value `v`"""
+        self.store[k] = (time.time(), v)
+        self._persist()
+
+    def get(self, k):
+        """Returns key contents, and modify time"""
+        if self._changed():
+            self._read()
+
+        if k in self.store:
+            return tuple(self.store[k])
+        else:
+            return None
+
+    def contains(self, k):
+        """Return True if key `k` exists"""
+        if self._changed():
+            self._read()
+        return k in self.store.keys()
+
+    def delete(self, k):
+        """Remove key `k` from the cache"""
+        self._remove_key(k)
+
