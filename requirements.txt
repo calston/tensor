@@ -2,4 +2,4 @@ Twisted
 PyYaml
 protobuf
 construct
-pysnmp
+pysnmp==4.2.5
