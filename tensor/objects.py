@@ -17,19 +17,33 @@ class Event(object):
     :param service: The service name for this event
     :param description: A description for the event, ie. "My house is on fire!"
     :param metric: int or float metric for this event
+    :param ttl: TTL (time-to-live) for this event
     :param tags: List of tag strings
     :param hostname: Hostname for the event (defaults to system fqdn)
     :param aggregation: Aggregation function
+    :param attributes: Attributes for this event
     :param evtime: Event timestamp override
     """
-    def __init__(self, state, service, description, metric, ttl, tags=[],
-            hostname=None, aggregation=None, evtime=None, type='riemann'):
+    def __init__(
+            self,
+            state,
+            service,
+            description,
+            metric,
+            ttl,
+            tags=None,
+            hostname=None,
+            aggregation=None,
+            evtime=None,
+            attributes=None,
+            type='riemann'):
         self.state = state
         self.service = service
         self.description = description
         self.metric = metric
         self.ttl = ttl
-        self.tags = tags
+        self.tags = tags if tags is not None else []
+        self.attributes = attributes if attributes is not None else dict()
         self.aggregation = aggregation
         self._type = type
         
