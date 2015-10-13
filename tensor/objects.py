@@ -21,7 +21,7 @@ class Event(object):
     :param tags: List of tag strings
     :param hostname: Hostname for the event (defaults to system fqdn)
     :param aggregation: Aggregation function
-    :param attributes: Attributes for this event
+    :param attributes: A dictionary of key/value attributes for this event
     :param evtime: Event timestamp override
     """
     def __init__(
@@ -43,7 +43,7 @@ class Event(object):
         self.metric = metric
         self.ttl = ttl
         self.tags = tags if tags is not None else []
-        self.attributes = attributes if attributes is not None else dict()
+        self.attributes = attributes
         self.aggregation = aggregation
         self._type = type
         
