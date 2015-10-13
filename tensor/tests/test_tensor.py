@@ -32,9 +32,8 @@ class Tests(unittest.TestCase):
         event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0,
                       attributes={"chicken": "little"})
 
-        message = proto.encodeMessage([event])
-        self.assertEqual(len(message.events), 1)
-        attrs = message.events[0].attributes
+        e = proto.encodeEvent(event)
+        attrs = e.attributes
         self.assertEqual(len(attrs), 1)
         self.assertEqual(attrs[0].key, "chicken")
         self.assertEqual(attrs[0].value, "little")
