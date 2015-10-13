@@ -31,7 +31,7 @@ class RiemannProtobufMixin(object):
                 pbevent.metric_f = float(event.metric)
         if event.attributes is not None:
             for key, value in event.attributes.items():
-                attribute = event.attributes.add()
+                attribute = pbevent.attributes.add()
                 attribute.key, attribute.value = key, value
 
         return pbevent
