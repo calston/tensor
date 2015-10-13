@@ -25,6 +25,15 @@ class Tests(unittest.TestCase):
         # Well, I guess we'll just assume this is right
         message = proto.encodeMessage([event])
 
+    def test_riemann_protobuf_with_attributes(self):
+        proto = riemann.RiemannProtocol()
+
+        event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0,
+                      attributes={"chicken": "little"})
+
+        # Well, I guess we'll just assume this is right
+        message = proto.encodeMessage([event])
+
     @defer.inlineCallbacks
     def test_tcp_riemann(self):
 
