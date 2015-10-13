@@ -3,7 +3,6 @@ from twisted.trial import unittest
 from twisted.internet import defer, reactor, error
 from twisted.internet.endpoints import TCP4ClientEndpoint, connectProtocol
 
-from tensor.ihateprotobuf.proto_pb2 import Attribute
 from tensor.protocol import riemann
 
 from tensor.objects import Event
