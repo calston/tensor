@@ -3,6 +3,7 @@ from twisted.trial import unittest
 from twisted.internet import defer, reactor, error
 from twisted.internet.endpoints import TCP4ClientEndpoint, connectProtocol
 
+from tensor.ihateprotobuf.proto_pb2 import Attribute
 from tensor.protocol import riemann
 
 from tensor.objects import Event
@@ -31,8 +32,12 @@ class Tests(unittest.TestCase):
         event = Event('ok', 'sky', 'Sky has not fallen', 1.0, 60.0,
                       attributes={"chicken": "little"})
 
-        # Well, I guess we'll just assume this is right
         message = proto.encodeMessage([event])
+        self.assertEqual(len(message.events), 1)
+        attrs = message.events[0].attributes
+        self.assertEqual(len(attrs), 1)
+        self.assertEqual(attrs[0].key, "chicken")
+        self.assertEqual(attrs[0].value, "little")
 
     @defer.inlineCallbacks
     def test_tcp_riemann(self):
