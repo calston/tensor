@@ -137,7 +137,7 @@ class Source(object):
             self.tags = [tag.strip() for tag in config['tags'].split(',')]
         else:
             self.tags = []
-        if 'attributes' in config:
+        if 'attributes' in config and isinstance(config['attributes'], dict):
             self.attributes = config['attributes']
 
         self.hostname = config.get('hostname')
