@@ -128,6 +128,7 @@ class Source(object):
         self.config = config
         self.t = task.LoopingCall(self.tick)
         self.td = None
+        self.attributes = None
 
         self.service = config['service']
         self.inter = float(config['interval'])
@@ -137,6 +138,10 @@ class Source(object):
             self.tags = [tag.strip() for tag in config['tags'].split(',')]
         else:
             self.tags = []
+
+        attributes = config.get("attributes")
+        if isinstance(attributes, dict):
+            self.attributes = attributes
 
         self.hostname = config.get('hostname')
         if self.hostname is None:
@@ -201,7 +206,7 @@ class Source(object):
 
         return Event(state, service_name, description, metric, self.ttl,
             hostname=hostname or self.hostname, aggregation=aggregation,
-            evtime=evtime, tags=self.tags
+            evtime=evtime, tags=self.tags, attributes=self.attributes
         )
 
     def createLog(self, type, data, evtime=None, hostname=None):
