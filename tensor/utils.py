@@ -2,6 +2,9 @@ import signal
 import json
 import time
 import urllib
+import exceptions
+import os
+
 from StringIO import StringIO
 
 from zope.interface import implements
@@ -13,6 +16,16 @@ from twisted.web.client import Agent
 from twisted.names import client
 from twisted.python import log
 
+from twisted.internet.endpoints import clientFromString
+
+class SocketyAgent(Agent):
+    def __init__(self, reactor, path, **kwargs):
+        self.path = path
+        Agent.__init__(self, reactor, **kwargs)
+
+    def _getEndpoint(self, scheme, host, port):
+        client = clientFromString(reactor, self.path)
+        return client
 
 class Timeout(Exception):
     """
@@ -183,16 +196,19 @@ class HTTPRequest(object):
 
         defer.returnValue(body)
 
-    def request(self, url, method='GET', headers={}, data=None):
+    def request(self, url, method='GET', headers={}, data=None, socket=None):
         self.timedout = False
 
-        if url[:5] == 'https':
-            if SSL:
-                agent = Agent(reactor, WebClientContextFactory())
-            else:
-                raise Exception('HTTPS requested but not supported')
+        if socket:
+            agent = SocketyAgent(reactor, socket)
         else:
-            agent = Agent(reactor)
+            if url[:5] == 'https':
+                if SSL:
+                    agent = Agent(reactor, WebClientContextFactory())
+                else:
+                    raise Exception('HTTPS requested but not supported')
+            else:
+                agent = Agent(reactor)
         
         request = agent.request(method, url,
             Headers(headers),
@@ -225,22 +241,118 @@ class HTTPRequest(object):
         return request
 
 
-    def getBody(self, url, method='GET', headers={}, data=None):
+    def getBody(self, url, method='GET', headers={}, data=None, socket=None):
         """Make an HTTP request and return the body
         """
 
         if not 'User-Agent' in headers:
             headers['User-Agent'] = ['Tensor HTTP checker']
 
-        return self.request(url, method, headers, data)
+        return self.request(url, method, headers, data, socket)
 
     @defer.inlineCallbacks
-    def getJson(self, url, method='GET', headers={}, data=None):
+    def getJson(self, url, method='GET', headers={}, data=None, socket=None):
         """Fetch a JSON result via HTTP
         """
         if not 'Content-Type' in headers:
             headers['Content-Type'] = ['application/json']
 
-        body = yield self.getBody(url, method, headers, data)
+        body = yield self.getBody(url, method, headers, data, socket)
         
         defer.returnValue(json.loads(body))
+
+class PersistentCache(object):
+    """A very basic dictionary cache abstraction. Not to be used
+    for large amounts of data or high concurrency"""
+
+    def __init__(self, location='/var/lib/tensor/cache'):
+        self.store = {}
+        self.location = location
+        self.mtime = 0
+        self._read()
+
+    def _changed(self):
+        if os.path.exists(self.location):
+            mtime = os.stat(self.location).st_mtime
+
+            return self.mtime != mtime
+        else:
+            return False
+
+    def _acquire_cache(self):
+        try:
+            cache_file = open(self.location, 'r')
+        except exceptions.IOError:
+            return {}
+
+        cache = json.loads(cache_file.read())
+        cache_file.close()
+        return cache
+
+    def _write_cache(self, d):
+        cache_file = open(self.location, 'w')
+        cache_file.write(json.dumps(d))
+        cache_file.close()
+
+    def _persist(self):
+        cache = self._acquire_cache()
+
+        for k, v in self.store.iteritems():
+            cache[k] = v
+
+        self._write_cache(cache)
+
+    def _read(self):
+        cache = self._acquire_cache()
+        for k, v in cache.iteritems():
+            self.store[k] = v
+
+    def _remove_key(self, k):
+        cache = self._acquire_cache()
+        if k in cache:
+            if k in cache:
+                del cache[k]
+            if k in self.store:
+                del self.store[k]
+            self._write_cache(cache)
+
+    def expire(self, age):
+        """Expire any items in the cache older than `age` seconds"""
+        now = time.time()
+        cache = self._acquire_cache()
+        
+        expired = [k for k, v in cache.iteritems() if (now - v[0]) > age]
+
+        for k in expired:
+            if k in cache:
+                del cache[k]
+            if k in self.store:
+                del self.store[k]
+
+        self._write_cache(cache)
+
+    def set(self, k, v):
+        """Set a key `k` to value `v`"""
+        self.store[k] = (time.time(), v)
+        self._persist()
+
+    def get(self, k):
+        """Returns key contents, and modify time"""
+        if self._changed():
+            self._read()
+
+        if k in self.store:
+            return tuple(self.store[k])
+        else:
+            return None
+
+    def contains(self, k):
+        """Return True if key `k` exists"""
+        if self._changed():
+            self._read()
+        return k in self.store.keys()
+
+    def delete(self, k):
+        """Remove key `k` from the cache"""
+        self._remove_key(k)
+

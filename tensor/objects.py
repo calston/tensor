@@ -17,19 +17,33 @@ class Event(object):
     :param service: The service name for this event
     :param description: A description for the event, ie. "My house is on fire!"
     :param metric: int or float metric for this event
+    :param ttl: TTL (time-to-live) for this event
     :param tags: List of tag strings
     :param hostname: Hostname for the event (defaults to system fqdn)
     :param aggregation: Aggregation function
+    :param attributes: A dictionary of key/value attributes for this event
     :param evtime: Event timestamp override
     """
-    def __init__(self, state, service, description, metric, ttl, tags=[],
-            hostname=None, aggregation=None, evtime=None, type='riemann'):
+    def __init__(
+            self,
+            state,
+            service,
+            description,
+            metric,
+            ttl,
+            tags=None,
+            hostname=None,
+            aggregation=None,
+            evtime=None,
+            attributes=None,
+            type='riemann'):
         self.state = state
         self.service = service
         self.description = description
         self.metric = metric
         self.ttl = ttl
-        self.tags = tags
+        self.tags = tags if tags is not None else []
+        self.attributes = attributes
         self.aggregation = aggregation
         self._type = type
         
@@ -114,6 +128,7 @@ class Source(object):
         self.config = config
         self.t = task.LoopingCall(self.tick)
         self.td = None
+        self.attributes = None
 
         self.service = config['service']
         self.inter = float(config['interval'])
@@ -123,6 +138,10 @@ class Source(object):
             self.tags = [tag.strip() for tag in config['tags'].split(',')]
         else:
             self.tags = []
+
+        attributes = config.get("attributes")
+        if isinstance(attributes, dict):
+            self.attributes = attributes
 
         self.hostname = config.get('hostname')
         if self.hostname is None:
@@ -187,7 +206,7 @@ class Source(object):
 
         return Event(state, service_name, description, metric, self.ttl,
             hostname=hostname or self.hostname, aggregation=aggregation,
-            evtime=evtime, tags=self.tags
+            evtime=evtime, tags=self.tags, attributes=self.attributes
         )
 
     def createLog(self, type, data, evtime=None, hostname=None):

@@ -53,6 +53,8 @@ class RiemannTCP(Output):
     :type cert: str.
     :param key: Host private key path
     :type key: str.
+    :param allow_nan: Send events with None metric value (default true)
+    :type allow_nan: bool
     """
     def __init__(self, *a):
         Output.__init__(self, *a)
@@ -63,6 +65,7 @@ class RiemannTCP(Output):
         self.pressure = int(self.config.get('pressure', -1))
         self.maxsize = int(self.config.get('maxsize', 250000))
         self.expire = self.config.get('expire', False)
+        self.allow_nan = self.config.get('allow_nan', True)
 
         maxrate = int(self.config.get('maxrate', 0))
 
@@ -151,7 +154,10 @@ class RiemannTCP(Output):
                 events = self.events
                 self.events = []
 
-            self.factory.proto.sendEvents(events)
+            if self.allow_nan:
+                self.factory.proto.sendEvents(events)
+            else:
+                self.factory.proto.sendEvents([e for e in events if e.metric is not None])
 
     def eventsReceived(self, events):
         """Receives a list of events and transmits them to Riemann
