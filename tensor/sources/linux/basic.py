@@ -28,6 +28,11 @@ class LoadAverage(Source):
 class DiskIO(Source):
     """Reports disk IO statistics per device
 
+    **Configuration arguments:**
+
+    :param devices: List of devices to check (optional)
+    :type devices: list.
+
     **Metrics:**
 
     :(service name).(device name).reads: Number of completed reads
@@ -42,6 +47,8 @@ class DiskIO(Source):
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)
+
+        self.devices = self.config.get('devices')
 
         self.tcache = {}
         self.trc = {}
@@ -64,6 +71,11 @@ class DiskIO(Source):
             n = parts[2]
             # Filter things we don't care about
             if (n[:4] != 'loop') and (n[:3] != 'ram'):
+                dname = "/dev/" + n
+
+                if self.devices and (dname not in self.devices):
+                    continue
+                
                 nums = [int(i) for i in parts[3:]]
 
                 reads, read_m, read_sec, read_t = nums[:4]
@@ -104,28 +116,26 @@ class DiskIO(Source):
 
                 self.tcache[n] = (reads, writes, read_t, write_t)
 
-                n = "/dev/" + n
-
                 if read_lat:
                      events.append(self.createEvent('ok',
                         'Read latency (ms)', read_lat,
-                        prefix='%s.read_latency' % n))
+                        prefix='%s.read_latency' % dname))
 
                 if write_lat:
                      events.append(self.createEvent('ok',
                         'Write latency (ms)', write_lat,
-                        prefix='%s.write_latency' % n))
+                        prefix='%s.write_latency' % dname))
 
                 events.extend([
                     self.createEvent('ok', 'Reads' , reads,
-                        prefix='%s.reads' % n, aggregation=Counter64),
+                        prefix='%s.reads' % dname, aggregation=Counter64),
                     self.createEvent('ok', 'Read Bps' , read_sec * 512,
-                        prefix='%s.read_bytes' % n, aggregation=Counter64),
+                        prefix='%s.read_bytes' % dname, aggregation=Counter64),
 
                     self.createEvent('ok', 'Writes', writes,
-                        prefix='%s.writes' % n, aggregation=Counter64),
+                        prefix='%s.writes' % dname, aggregation=Counter64),
                     self.createEvent('ok', 'Write Bps', write_sec * 512,
-                        prefix='%s.write_bytes' % n, aggregation=Counter64),
+                        prefix='%s.write_bytes' % dname, aggregation=Counter64),
                 ])
 
         return events
@@ -233,6 +243,11 @@ class Memory(Source):
 class DiskFree(Source):
     """Returns the free space for all mounted filesystems
 
+    **Configuration arguments:**
+
+    :param disks: List of devices to check (optional)
+    :type disks: list.
+
     **Metrics:**
 
     :(service name).(device): Used space (%)
@@ -243,6 +258,8 @@ class DiskFree(Source):
 
     @defer.inlineCallbacks
     def get(self):
+        disks = self.config.get('disks')
+
         out, err, code = yield fork('/bin/df', args=('-lPx', 'tmpfs',))
 
         out = [i.split() for i in out.strip('\n').split('\n')[1:]]
@@ -250,6 +267,9 @@ class DiskFree(Source):
         events = []
 
         for disk, size, used, free, util, mount in out:
+            if disks and (disk not in disks):
+                continue
+
             if disk != "udev":
                 util = int(util.strip('%'))
                 used = int(used)
@@ -268,6 +288,11 @@ class DiskFree(Source):
 class Network(Source):
     """Returns all network interface statistics
 
+    **Configuration arguments:**
+
+    :param interfaces: List of interfaces to check (optional)
+    :type interfaces: list.
+
     **Metrics:**
 
     :(service name).(device).tx_bytes: Bytes transmitted
@@ -285,11 +310,17 @@ class Network(Source):
         return proc_dev.strip('\n').split('\n')[2:]
 
     def get(self):
+        ifaces = self.config.get('interfaces')
+
         ev = []
 
         for stat in self._readStats():
             items = stat.split()
             iface = items[0].strip(':')
+
+            if ifaces and (iface not in ifaces):
+                continue
+
             tx_bytes = int(items[1])
             tx_packets = int(items[2])
             tx_err = int(items[3])
