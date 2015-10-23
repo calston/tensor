@@ -72,20 +72,48 @@ class RiemannClientFactory(protocol.ReconnectingClientFactory):
     factor = 2
     jitter = 0
 
+    def __init__(self, hosts, failover=False):
+        self.failover = failover
+
+        if self.failover:
+            if isinstance(hosts, list):
+                self.hosts = hosts
+            else:
+                self.hosts = [hosts]
+
+        self.host_index = 0
+
     def buildProtocol(self, addr):
         self.resetDelay()
         self.proto = RiemannProtocol()
         return self.proto
 
+    def _do_failover(self, connector):
+        if self.failover:
+            if self.host_index >= (len(self.hosts)-1):
+                self.host_index = 0
+            else:
+                self.host_index += 1
+
+            connector.host = self.hosts[self.host_index]
+
     def clientConnectionLost(self, connector, reason):
         log.msg('Lost connection.  Reason:' + str(reason))
         self.proto = None
+
+        self._do_failover(connector)
+
+        log.msg('Reconnecting to Riemann on %s:%s' % (connector.host, connector.port))
         protocol.ReconnectingClientFactory.clientConnectionLost(
             self, connector, reason)
 
     def clientConnectionFailed(self, connector, reason):
         log.msg('Connection failed. Reason:' + str(reason))
         self.proto = None
+
+        self._do_failover(connector)
+
+        log.msg('Reconnecting to Riemann on %s:%s' % (connector.host, connector.port))
         protocol.ReconnectingClientFactory.clientConnectionFailed(
             self, connector, reason)
 

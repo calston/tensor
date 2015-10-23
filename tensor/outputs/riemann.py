@@ -1,4 +1,5 @@
 import time
+import random
 
 from twisted.internet import reactor, defer, task
 from twisted.python import log
@@ -36,6 +37,8 @@ class RiemannTCP(Output):
     :type server: str.
     :param port: Riemann server port (default: 5555)
     :type port: int.
+    :param failover: Enable server failover, in which case `server` may be a list
+    :type failover: bool.
     :param maxrate: Maximum de-queue rate (0 is no limit)
     :type maxrate: int.
     :param maxsize: Maximum queue size (0 is no limit, default is 250000)
@@ -78,21 +81,29 @@ class RiemannTCP(Output):
         """Create a TCP connection to Riemann with automatic reconnection
         """
 
-        self.factory = riemann.RiemannClientFactory()
-
         server = self.config.get('server', 'localhost')
         port = self.config.get('port', 5555)
+        failover = self.config.get('failover', False)
+
+        self.factory = riemann.RiemannClientFactory(server, failover=failover)
+
+        if failover:
+            initial = random.choice(server)
+        else:
+            initial = server
+
+        log.msg('Connecting to Riemann on %s:%s' % (initial, port))
         
         if self.tls:
             if SSL:
-                self.connector = reactor.connectSSL(server, port, self.factory,
+                self.connector = reactor.connectSSL(initial, port, self.factory,
                     ClientTLSContext(self.key, self.cert))
             else:
                 log.msg('[FATAL] SSL support not available!' \
                     ' Please install PyOpenSSL. Exiting now')
                 reactor.stop()
         else:
-            self.connector = reactor.connectTCP(server, port, self.factory)
+            self.connector = reactor.connectTCP(initial, port, self.factory)
 
         d = defer.Deferred()
 
