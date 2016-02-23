@@ -1,0 +1,15 @@
+{
+  "name": "calston-tensor",
+  "version": "0.1.0",
+  "author": "calston",
+  "summary": "Tensor agent module",
+  "license": "MIT",
+  "source": "https://github.com/calston/tensor/",
+  "project_page": "https://tensor.readthedocs.org/en/stable/",
+  "issues_url": "https://github.com/calston/tensor/issues",
+  "dependencies": [
+    {"name":"puppetlabs-stdlib","version_requirement":">= 1.0.0"}
+  ],
+  "data_provider": null
+}
+

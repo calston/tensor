@@ -1,0 +1,7 @@
+outputs:
+    - output: <%= @output %>
+      <%- if @config -%>
+      <%- @config.keys.sort.each do |key| -%>
+      <%= key %>: <%= @config[key] %>
+      <%- end -%>
+      <%- end -%>

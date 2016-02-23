@@ -1,0 +1,19 @@
+sources:
+<%- orghosts.each do |host| -%>
+    - service: <%= @service %>
+      source: tensor.sources.network.Ping
+<%- if @route -%>
+      route: <%= @route %>
+<%- end -%>
+      interval: 30.0
+      hostname: <%= host %>
+      tags: alert
+      critical: {
+        ping.latency: "> 600",
+        ping.loss: "> 50"
+      }
+      warning: {
+        ping.loss: "> 0"
+      }
+
+<%- end -%>

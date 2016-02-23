@@ -1,0 +1,30 @@
+sources:
+    <%- if @service_name -%>
+    - service: <%= @service_name %>
+    <%- else -%>
+    - service: <%= @service %>
+    <%- end -%>
+      source: <%= @source %>
+      interval: <%= @interval %>
+      <%- if @tags -%>
+      tags: <%= @tags %>
+      <%- end -%>
+      <%- if @config -%>
+      <%- @config.keys.sort.each do |key| -%>
+      <%= key %>: <%= @config[key] %>
+      <%- end -%>
+      <%- end -%>
+      <%- if @critical -%>
+      critical: {
+        <%- @critical.keys.sort.each do |key| -%>
+        <%= key %>: "<%= @critical[key] %>",
+        <%- end -%>
+      }
+      <%- end -%>
+      <%- if @warning -%>
+      warning: {
+        <%- @warning.keys.sort.each do |key| -%>
+        <%= key %>: "<%= @warning[key] %>",
+        <%- end -%>
+      }
+      <%- end -%>
