@@ -1,0 +1,6 @@
+Archive: trusty
+Component: main
+Origin: Tensor
+Label: Tensor
+Architecture: i386
+Description: Apt repository for Tensor
