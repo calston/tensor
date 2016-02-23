@@ -34,8 +34,8 @@ class tensor(
     require => File['/etc/tensor/conf.d'],
   }
 
-  create_resources(output, $outputs)
+  create_resources(tensor::output, $outputs)
 
-  create_resources(source, $sources)
+  create_resources(tensor::source, $sources)
 }
 
