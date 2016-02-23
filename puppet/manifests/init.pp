@@ -2,8 +2,6 @@ class tensor(
     $interval=1.0,
     $default_ttl=60.0,
     $outputs={},
-    $riemann_servers=[],
-    $riemann_port='5554',
     $sources={}
   ) {
 
