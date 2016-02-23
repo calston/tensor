@@ -1,3 +1,4 @@
+# TODO: Document
 class tensor(
     $interval=1.0,
     $default_ttl=60.0,
@@ -13,7 +14,7 @@ class tensor(
   }
 
   package{'tensor':
-    ensure => latest,
+    ensure  => latest,
     require => Apt::Source['tensor']
   }
 
