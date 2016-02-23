@@ -8,8 +8,21 @@
   "project_page": "https://tensor.readthedocs.org/en/stable/",
   "issues_url": "https://github.com/calston/tensor/issues",
   "dependencies": [
-    {"name":"puppetlabs-stdlib","version_requirement":">= 1.0.0"}
+    {
+      "name": "puppetlabs/stdlib",
+      "version_requirement": ">= 1.0.0"
+    },
+    {
+      "name": "puppetlabs/apt"
+    }
   ],
-  "data_provider": null
+  "data_provider": null,
+  "operatingsystem_support": [
+    {
+      "operatingsystem": "Ubuntu",
+      "operatingsystemrelease": [
+        "14.04"
+      ]
+    }
+  ]
 }
-

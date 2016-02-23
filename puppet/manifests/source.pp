@@ -1,3 +1,4 @@
+# TODO: Document
 define tensor::source($source, $interval='60.0', $config=false,
   $critical=false, $warning=false, $service_name=false, $tags=false
   ) {
