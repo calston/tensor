@@ -1,0 +1,49 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+Origin: Tensor
+Label: Tensor
+Suite: jessie
+Codename: jessie
+Date: Fri, 24 Jun 2016 14:40:00 UTC
+Architectures: i386 amd64
+Components: main
+Description: Apt repository for Tensor
+MD5Sum:
+ d41d8cd98f00b204e9800998ecf8427e 0 main/binary-i386/Packages
+ 7029066c27ac6f5ef18d660d5741979a 20 main/binary-i386/Packages.gz
+ 28bb749f4accaff5d548c4078995438c 119 main/binary-i386/Release
+ e26c30dace85c54a7c43fe063b68e2e9 555 main/binary-amd64/Packages
+ dff51d20541f2fad0c373f3f14403f2e 406 main/binary-amd64/Packages.gz
+ 2cbb23c6912c8f9e6f97136319698b1b 120 main/binary-amd64/Release
+SHA1:
+ da39a3ee5e6b4b0d3255bfef95601890afd80709 0 main/binary-i386/Packages
+ 46c6643f07aa7f6bfe7118de926b86defc5087c4 20 main/binary-i386/Packages.gz
+ c5b2e618a5262f315283047f9ca9909f21da02aa 119 main/binary-i386/Release
+ 843fcf9215b6b092506d92387ab97aa10f926f5f 555 main/binary-amd64/Packages
+ 922952b874276b239739e9caf1612eaf704fc0d6 406 main/binary-amd64/Packages.gz
+ 330058971200f340dfd98d71b647d886732251e0 120 main/binary-amd64/Release
+SHA256:
+ e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 0 main/binary-i386/Packages
+ 59869db34853933b239f1e2219cf7d431da006aa919635478511fabbfc8849d2 20 main/binary-i386/Packages.gz
+ c79dac9a44ff7ae00f247cbd0b094b6f9a27b679df764d521fb1c146d9ccedbc 119 main/binary-i386/Release
+ 429b01b462732a2a06e50f3df95094c9d76a813f34c55ab62b3cd2a418f9907f 555 main/binary-amd64/Packages
+ 0e4d6423b05bec1f2fb8e6128d679c6adb2647f3dadb05af3e02280d7da549a8 406 main/binary-amd64/Packages.gz
+ e4ac6f8f34fa32a8863e2c909222a227e8ae024559e864e15c1a5a9339a070f4 120 main/binary-amd64/Release
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJXbUZCAAoJEG/Ewz8rKlSASn0P/0WZle4BWaCBKGE+233VxDw7
+Wx6xHGn90DkBEteNIQETuczd5UWZRa1j8DvI76D8N/WwRjHfmcH/azXsFbGHuN7/
+/B1vDlel/nCzgiQ8iSd7dHfKO6Cs3Z28rwVDfB44yLr2fTvZEichP0m68hg7UXHF
+irZ/DW6Ku6TO8wcLmHJ12b7f2A7S7p2IVo4G6b4XM76v719RTHw0ukgf0kmNIKzb
+tgJLzV6PtML9CKwRfedWLDCVZCKPJdQelPRTvswLl4HnJ3qMHa40XrWen37U7a3x
+NS/CWaiGNll++GI99841t45ZtfQxWDZZeyj3PL+L2iTnBlY5xnj6JEmS7eA7rjJ+
+WoDyqBl7bIkxuZWNleKozy7JKXyq50zvcGILSbVj7vVLGG7Gmv4uv78Amw3H1Qyd
+IoF3ISOQp8bnN8FXtPdfp396N124PpMqc/6OdHU+H5ZYn5IL/JqkxKayBMLb6ifX
+iZEUAJPLakMiT9mBsKt020OO24j7kCtxXXdEi41zVzOkfzcASfwqTr5bLA656l0+
+zWZQ51Lc15KqVbKflgBiKLWyaa1PzolI7I5G7kGvTtYDqE21rVjvXE6ID8CKe7c5
+KWF9C8N7MiwxixjgnlVzqcHylhaLhXoWtSMBo9NsP3uD2hNLSPzxudShsXc7GElz
+T076outaLKB7KnwE4FHU
+=D0RO
+-----END PGP SIGNATURE-----

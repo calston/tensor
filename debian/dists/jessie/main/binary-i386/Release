@@ -1,6 +1,6 @@
-Archive: trusty
+Archive: jessie
 Component: main
 Origin: Tensor
 Label: Tensor
-Architecture: amd64
+Architecture: i386
 Description: Apt repository for Tensor

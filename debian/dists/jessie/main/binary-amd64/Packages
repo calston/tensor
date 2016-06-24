@@ -1,18 +1,18 @@
 Package: tensor
-Version: 0.3.6
+Version: 0.3.7
 License: MIT
 Vendor: none
 Architecture: amd64
 Maintainer: <colin@kraken>
-Installed-Size: 461
+Installed-Size: 465
 Depends: python-twisted, python-protobuf, python-yaml, python-openssl
 Homepage: http://github.com/calston/tensor
 Priority: extra
 Section: default
-Filename: pool/main/t/tensor/tensor_0.3.6_amd64.deb
-Size: 133292
-SHA256: c1f1eb2a4804f3eafe674f6ecbcc02386b02734912d24d5144ec92154d4682b2
-SHA1: 445884cef3658ff4d7132982c283d68b6bf93d95
-MD5sum: c0ba115b103c0d055f5bbaa00c7714ef
+Filename: pool/main/t/tensor/tensor_0.3.7_amd64.deb
+Size: 132184
+SHA256: b1f2cdf805a86ecd79b0cb36e63673cfe2f3099a233b069f09f2d2f41cec809d
+SHA1: e94c6d97c141b9f6eaf56bb6a9d3fbbc9d49a961
+MD5sum: b27607dae51efcae817eca33290777af
 Description: A Twisted based monitoring agent for Riemann
 
