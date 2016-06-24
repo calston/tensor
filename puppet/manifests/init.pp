@@ -6,11 +6,21 @@ class tensor(
     $sources={}
   ) {
 
-  apt::source {'tensor':
-    location   => 'https://calston.github.io/tensor/ubuntu',
-    repos      => 'main',
-    key        => '2B2A5480',
-    key_server => 'keyserver.ubuntu.com'
+  if $operatingsystem == 'Ubuntu' {
+    apt::source {'tensor':
+      location   => 'https://calston.github.io/tensor/ubuntu',
+      repos      => 'main',
+      key        => '2B2A5480',
+      key_server => 'keyserver.ubuntu.com'
+    }
+  }
+  if $operatingsystem == 'Debian' {
+    apt::source {'tensor':
+      location   => 'https://calston.github.io/tensor/debian',
+      repos      => 'main',
+      key        => '2B2A5480',
+      key_server => 'keyserver.ubuntu.com'
+    }
   }
 
   package{'tensor':

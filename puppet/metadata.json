@@ -1,6 +1,6 @@
 {
   "name": "calston-tensor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "calston",
   "summary": "Tensor agent module",
   "license": "MIT",
@@ -24,5 +24,12 @@
         "14.04"
       ]
     }
+    {
+      "operatingsystem": "Debian",
+      "operatingsystemrelease": [
+        "8.5"
+      ]
+    }
+
   ]
 }
