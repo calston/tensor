@@ -1,0 +1,8 @@
+Origin: Tensor
+Label: Tensor
+Codename: jessie
+Suite: jessie
+Architectures: i386 amd64
+Components: main
+Description: Apt repository for Tensor
+SignWith: 2B2A5480
