@@ -6,7 +6,7 @@ class tensor(
     $sources={}
   ) {
 
-  if $operatingsystem == 'Ubuntu' {
+  if $::operatingsystem == 'Ubuntu' {
     apt::source {'tensor':
       location   => 'https://calston.github.io/tensor/ubuntu',
       repos      => 'main',
@@ -14,7 +14,7 @@ class tensor(
       key_server => 'keyserver.ubuntu.com'
     }
   }
-  if $operatingsystem == 'Debian' {
+  if $::operatingsystem == 'Debian' {
     apt::source {'tensor':
       location   => 'https://calston.github.io/tensor/debian',
       repos      => 'main',
