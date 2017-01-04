@@ -1,5 +1,4 @@
 from construct import *
-from construct import adapters
 
 class InterfaceCounters(object):
     def __init__(self, u):

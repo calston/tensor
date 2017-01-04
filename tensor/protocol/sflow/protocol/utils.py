@@ -15,7 +15,7 @@ def unpack_address(u):
 class IPv4Address(object):
     def __init__(self, addr_int):
         self.addr_int = addr_int
-        self.na = struct.pack('!L', addr_int)
+        self.na = struct.pack(b'!L', addr_int)
     
     def __str__(self):
         return socket.inet_ntoa(self.na)

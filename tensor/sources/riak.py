@@ -44,15 +44,15 @@ class RiakStats(Source):
         ua = self.config.get('useragent', 'Tensor Riak stats checker')
 
         headers = Headers({'User-Agent': [ua]})
-        request = yield agent.request('GET', url, headers)
+        request = yield agent.request('GET'.encode(), url.encode(), headers)
 
-        if request.length:
+        if (request.length) and (request.code == 200):
             d = defer.Deferred()
             request.deliverBody(BodyReceiver(d))
             b = yield d
             body = b.read()
         else:
-            body = ""
+            body = "{}"
 
         defer.returnValue(json.loads(body))
 

@@ -106,12 +106,12 @@ class NginxLogMetrics(Source):
 
     **Metrics:**
 
-    :(service name).total_bytes: Bytes total for all requests
+    :(service name).total_rbytes: Bytes total for all requests
     :(service name).total_requests: Total request count
-    :(service name).stats.(code).(requests|bytes): Metrics by status code
-    :(service name).user-agent.(agent).(requests|bytes): Metrics by user agent
-    :(service name).client.(ip).(requests|bytes): Metrics by client IP
-    :(service name).request.(request path).(requests|bytes): Metrics by request path
+    :(service name).stats.(code).(requests|rbytes): Metrics by status code
+    :(service name).user-agent.(agent).(requests|rbytes): Metrics by user agent
+    :(service name).client.(ip).(requests|rbytes): Metrics by client IP
+    :(service name).request.(request path).(requests|rbytes): Metrics by request path
     """
 
     # Don't allow overlapping runs
@@ -151,7 +151,7 @@ class NginxLogMetrics(Source):
     def dumpEvents(self, ts):
         if self.st:
             events = [
-                self.createEvent('ok', 'Nginx bytes', self.bytes, prefix='total_bytes',
+                self.createEvent('ok', 'Nginx rbytes', self.rbytes, prefix='total_rbytes',
                     evtime=ts),
                 self.createEvent('ok', 'Nginx requests', self.requests,
                     prefix='total_requests', evtime=ts)
@@ -159,31 +159,31 @@ class NginxLogMetrics(Source):
 
             for field, block in self.st.items():
                 for key, vals in block.items():
-                    bytes, requests = vals
+                    rbytes, requests = vals
                     events.extend([
-                        self.createEvent('ok', 'Nginx %s %s bytes' % (field, key), bytes,
-                            prefix='%s.%s.bytes' % (field, key), evtime=ts),
+                        self.createEvent('ok', 'Nginx %s %s rbytes' % (field, key), rbytes,
+                            prefix='%s.%s.rbytes' % (field, key), evtime=ts),
                         self.createEvent('ok', 'Nginx %s %s requests' % (field, key), requests,
                             prefix='%s.%s.requests' % (field, key), evtime=ts)
                     ])
 
             self.st = {}
-            self.bytes = 0
+            self.rbytes = 0
             self.requests = 0
 
             self.queueBack(events)
 
     def got_line(self, line):
-        b = line.get('bytes', 0)
+        b = line.get('rbytes', 0)
         if b:
-            self.bytes += b
+            self.rbytes += b
         
         self.requests += 1
 
         t = time.mktime(line['time'].timetuple())
 
         # Calculate the time bucket for this line
-        bucket = (int(t)/self.bucket_res)*self.bucket_res
+        bucket = int(int(t)/self.bucket_res)*self.bucket_res
 
         if self.bucket:
             if (bucket != self.bucket):
@@ -202,7 +202,7 @@ class NginxLogMetrics(Source):
         )
 
     def get(self):
-        self.bytes = 0
+        self.rbytes = 0
         self.requests = 0
         self.st = {}
 

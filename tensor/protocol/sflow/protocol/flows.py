@@ -1,5 +1,5 @@
 from construct import *
-from construct import adapters
+from construct.adapters import MappingError
 
 from tensor.protocol.sflow.protocol import utils
 

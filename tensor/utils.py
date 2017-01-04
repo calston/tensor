@@ -77,14 +77,14 @@ class BodyReceiver(protocol.Protocol):
     """ Simple buffering consumer for body objects """
     def __init__(self, finished):
         self.finished = finished
-        self.buffer = StringIO()
+        self.data = StringIO()
 
-    def dataReceived(self, buffer):
-        self.buffer.write(buffer)
+    def dataReceived(self, data):
+        self.data.write(data.decode())
 
     def connectionLost(self, reason):
-        self.buffer.seek(0)
-        self.finished.callback(self.buffer)
+        self.data.seek(0)
+        self.finished.callback(self.data)
 
 @implementer(IBodyProducer)
 class StringProducer(object):
@@ -113,8 +113,12 @@ class ProcessProtocol(protocol.ProcessProtocol):
         self.deferred = deferred
         self.outBuf = StringIO()
         self.errBuf = StringIO()
-        self.outReceived = self.outBuf.write
-        self.errReceived = self.errBuf.write
+
+    def outReceived(self, data):
+        self.outBuf.write(data.decode())
+
+    def errReceived(self, data):
+        self.errBuf.write(data.decode())
 
     def processEnded(self, reason):
         if self.timer and (not self.timer.called):
@@ -216,7 +220,7 @@ class HTTPRequest(object):
             else:
                 agent = Agent(reactor)
         
-        request = agent.request(method, url,
+        request = agent.request(method.encode(), url.encode(),
             Headers(headers),
             StringProducer(data) if data else None
         )
@@ -303,14 +307,14 @@ class PersistentCache(object):
     def _persist(self):
         cache = self._acquire_cache()
 
-        for k, v in self.store.iteritems():
+        for k, v in self.store.items():
             cache[k] = v
 
         self._write_cache(cache)
 
     def _read(self):
         cache = self._acquire_cache()
-        for k, v in cache.iteritems():
+        for k, v in cache.items():
             self.store[k] = v
 
     def _remove_key(self, k):
@@ -327,7 +331,7 @@ class PersistentCache(object):
         now = time.time()
         cache = self._acquire_cache()
         
-        expired = [k for k, v in cache.iteritems() if (now - v[0]) > age]
+        expired = [k for k, v in cache.items() if (now - v[0]) > age]
 
         for k in expired:
             if k in cache:
