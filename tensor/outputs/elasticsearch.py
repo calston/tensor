@@ -33,6 +33,9 @@ class ElasticSearchLog(Output):
     :type user: str
     :param password: Optional basic auth password
     :type password: str
+    :param index: Index name format to store documents in Elastic
+                  (default: tensor-%Y.%m.%d)
+    :type index: str
     """
     def __init__(self, *a):
         Output.__init__(self, *a)
@@ -49,6 +52,8 @@ class ElasticSearchLog(Output):
 
         maxrate = int(self.config.get('maxrate', 100))
 
+        self.index = self.config.get('index', 'tensor-%Y.%m.%d')
+
         if maxrate > 0:
             self.queueDepth = int(maxrate * self.inter)
         else:
@@ -62,7 +67,7 @@ class ElasticSearchLog(Output):
         port = int(self.config.get('port', 9200))
 
         self.client = elasticsearch.ElasticSearch(self.url, self.user,
-            self.password)
+            self.password, self.index)
 
         self.t.start(self.inter)
 
