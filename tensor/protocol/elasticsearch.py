@@ -9,7 +9,7 @@ class ElasticSearch(object):
     """Twisted ElasticSearch API
     """
     def __init__(self, url='http://localhost:9200', user=None, password=None,
-                 index='logstash-%Y.%m.%d'):
+                 index='tensor-%Y.%m.%d'):
         self.url = url.rstrip('/')
         self.index = index
         self.user = user
