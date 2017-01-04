@@ -17,8 +17,6 @@ from tensor.objects import Output
 class ElasticSearch(Output):
     """ElasticSearch HTTP API output
 
-    This Output transposes events to a Logstash format
-
     **Configuration arguments:**
 
     :param url: Elasticsearch URL (default: http://localhost:9200)
