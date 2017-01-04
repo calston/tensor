@@ -14,7 +14,7 @@ from tensor.protocol import elasticsearch
 
 from tensor.objects import Output
 
-class ElasticSearchLog(Output):
+class ElasticSearch(Output):
     """ElasticSearch HTTP API output
 
     This Output transposes events to a Logstash format
@@ -124,3 +124,5 @@ class ElasticSearchLog(Output):
         if (self.maxsize < 1) or (len(self.events) < self.maxsize):
             self.events.extend(events)
 
+# Backward compatibility stub
+ElasticSearchLog = ElasticSearch
