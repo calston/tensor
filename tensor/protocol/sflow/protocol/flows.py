@@ -182,9 +182,9 @@ class ISO8023Header(object):
         try:
             ethernet = frame.parse(data[:14])
         except adapters.MappingError:
-            print "Broken ethernet header"
+            print("Broken ethernet header")
             self.frame = None
-            print repr(data)
+            print(repr(data))
             return
         data = data[14:]
 
@@ -202,7 +202,7 @@ class ISO8023Header(object):
             self.ip_sport = ipv4.ip_sport
             self.ip_dport = ipv4.ip_dport
         else:
-            print ethernet.type, repr(data)
+            print(ethernet.type, repr(data))
 
 class IPv6Header(object):
     def __init__(self, u):
@@ -237,7 +237,7 @@ class HeaderSample(object):
                 self.sample_header
             )
         else:
-            print "Unknown protocol:", self.protocol
+            print("Unknown protocol:", self.protocol)
             self.frame = None
 
 class EthernetSample(object):

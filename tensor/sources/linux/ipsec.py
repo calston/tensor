@@ -1,4 +1,4 @@
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 
@@ -6,6 +6,8 @@ from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 from tensor.utils import fork
 
+
+@implementer(ITensorSource)
 class StrongSwan(Source):
     """Returns the status of strongSwan IPSec tunnels
 
@@ -13,7 +15,6 @@ class StrongSwan(Source):
 
     :(service name).(peer name): Tunnel status
     """
-    implements(ITensorSource)
 
     @defer.inlineCallbacks
     def get(self):

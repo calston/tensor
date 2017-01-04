@@ -10,11 +10,13 @@ import time, math
 
 from twisted.internet import defer, reactor
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 
+
+@implementer(ITensorSource)
 class Function(Source):
     """Produces an arbitrary function
 
@@ -30,8 +32,6 @@ class Function(Source):
     :param function: Function to produce
     :type function: string.
     """
-
-    implements(ITensorSource)
 
     x = 0
 

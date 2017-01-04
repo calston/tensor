@@ -1,6 +1,6 @@
 import os
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 
@@ -8,6 +8,7 @@ from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 from tensor.utils import fork
 
+@implementer(ITensorSource)
 class Sensors(Source):
     """Returns lm-sensors output
 
@@ -19,8 +20,6 @@ class Sensors(Source):
 
     :(service name).(adapter).(sensor): Sensor value
     """
-    implements(ITensorSource)
-
 
     @defer.inlineCallbacks
     def _get_sensors(self):
@@ -81,6 +80,7 @@ class Sensors(Source):
         
         defer.returnValue(events)
 
+@implementer(ITensorSource)
 class SMART(Source):
     """Returns SMART output for all disks
 
@@ -88,7 +88,6 @@ class SMART(Source):
 
     :(service name).(disk).(sensor): Sensor value
     """
-    implements(ITensorSource)
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)

@@ -1,6 +1,6 @@
 import time
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 from twisted.python import log
@@ -10,6 +10,8 @@ from tensor.objects import Source
 from tensor.utils import fork
 from tensor.aggregators import Counter
 
+
+@implementer(ITensorSource)
 class Queues(Source):
     """Query llen from redis-cli
 
@@ -27,7 +29,6 @@ class Queues(Source):
     :(service_name): Queue length
     :(service_name): Queue rate
     """
-    implements(ITensorSource)
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)

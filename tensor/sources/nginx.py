@@ -11,7 +11,7 @@ import datetime
 
 from twisted.internet import defer
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
@@ -20,6 +20,7 @@ from tensor.utils import HTTPRequest, fork
 from tensor.aggregators import Counter64
 from tensor.logs import parsers, follower
 
+@implementer(ITensorSource)
 class Nginx(Source):
     """Reads Nginx stub_status
 
@@ -38,8 +39,6 @@ class Nginx(Source):
     :(service name).writing: Writing responses
     :(service name).waiting: Waiting connections
     """
-
-    implements(ITensorSource)
 
     def _parse_nginx_stats(self, stats):
         stats = stats.split('\n')
@@ -83,6 +82,7 @@ class Nginx(Source):
 
         defer.returnValue(events)
 
+@implementer(ITensorSource)
 class NginxLogMetrics(Source):
     """Tails Nginx log files, parses them and returns metrics for data usage
     and requests against other fields.
@@ -113,8 +113,6 @@ class NginxLogMetrics(Source):
     :(service name).client.(ip).(requests|bytes): Metrics by client IP
     :(service name).request.(request path).(requests|bytes): Metrics by request path
     """
-
-    implements(ITensorSource)
 
     # Don't allow overlapping runs
     sync = True
@@ -212,6 +210,7 @@ class NginxLogMetrics(Source):
 
         self.dumpEvents(float(self.bucket))
 
+@implementer(ITensorSource)
 class NginxLog(Source):
     """Tails Nginx log files, parses them and returns log events for outputs
     which support them.
@@ -228,8 +227,6 @@ class NginxLog(Source):
                       (default 2000)
     :type max_lines: int.
     """
-
-    implements(ITensorSource)
 
     # Don't allow overlapping runs
     sync = True

@@ -1,6 +1,6 @@
 import time
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 
@@ -10,6 +10,7 @@ from tensor.utils import fork
 from tensor.aggregators import Counter64
 
 
+@implementer(ITensorSource)
 class LoadAverage(Source):
     """Reports system load average for the current host
 
@@ -17,7 +18,6 @@ class LoadAverage(Source):
 
     :(service name): Load average
     """
-    implements(ITensorSource)
 
     def get(self):
         la1 = open('/proc/loadavg', 'rt').read().split()[0]
@@ -25,6 +25,7 @@ class LoadAverage(Source):
         return self.createEvent('ok', 'Load average', float(la1))
 
 
+@implementer(ITensorSource)
 class DiskIO(Source):
     """Reports disk IO statistics per device
 
@@ -42,8 +43,6 @@ class DiskIO(Source):
     :(service name).(device name).write_bytes: Bytes written per second
     :(service name).(device name).write_latency: Disk write latency
     """
-
-    implements(ITensorSource)
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)
@@ -141,6 +140,7 @@ class DiskIO(Source):
         return events
 
 
+@implementer(ITensorSource)
 class CPU(Source):
     """Reports system CPU utilisation as a percentage/100
 
@@ -149,7 +149,6 @@ class CPU(Source):
     :(service name): Percentage CPU utilisation
     :(service name).(type): Percentage CPU utilisation by type
     """
-    implements(ITensorSource)
 
     cols = ['user', 'nice', 'system', 'idle', 'iowait', 'irq',
         'softirq', 'steal', 'guest', 'guest_nice']
@@ -216,6 +215,7 @@ class CPU(Source):
             return events
 
 
+@implementer(ITensorSource)
 class Memory(Source):
     """Reports system memory utilisation as a percentage/100
 
@@ -223,7 +223,6 @@ class Memory(Source):
 
     :(service name): Percentage memory utilisation
     """
-    implements(ITensorSource)
 
     def get(self):
         mem = open('/proc/meminfo')
@@ -240,6 +239,7 @@ class Memory(Source):
                                 used/float(total))
 
 
+@implementer(ITensorSource)
 class DiskFree(Source):
     """Returns the free space for all mounted filesystems
 
@@ -254,7 +254,6 @@ class DiskFree(Source):
     :(service name).(device).bytes: Used space (kbytes)
     :(service name).(device).free: Free space (kbytes)
     """
-    implements(ITensorSource)
 
     @defer.inlineCallbacks
     def get(self):
@@ -285,6 +284,7 @@ class DiskFree(Source):
 
         defer.returnValue(events)
 
+@implementer(ITensorSource)
 class Network(Source):
     """Returns all network interface statistics
 
@@ -302,7 +302,6 @@ class Network(Source):
     :(service name).(device).rx_packets: Packets received
     :(service name).(device).rx_errors: Errors
     """
-    implements(ITensorSource)
 
     def _readStats(self):
         proc_dev = open('/proc/net/dev', 'rt').read()

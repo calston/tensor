@@ -14,13 +14,15 @@ from twisted.internet import reactor, protocol
 from twisted.protocols.memcache import MemCacheProtocol
 from twisted.python import log
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 
 from tensor.aggregators import Counter64
 
+
+@implementer(ITensorSource)
 class Memcache(Source):
     """Reads memcache metrics
 
@@ -35,8 +37,6 @@ class Memcache(Source):
 
     :(service name).(metrics): Metrics from memcached
     """
-
-    implements(ITensorSource)
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)

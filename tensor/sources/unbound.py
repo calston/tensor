@@ -1,4 +1,4 @@
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 from twisted.python import log
@@ -8,6 +8,7 @@ from tensor.objects import Source
 from tensor.utils import fork
 
 
+@implementer(ITensorSource)
 class Stats(Source):
     """Returns stats from unbound-control
 
@@ -18,7 +19,6 @@ class Stats(Source):
     :type executable: str.
 
     """
-    implements(ITensorSource)
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)

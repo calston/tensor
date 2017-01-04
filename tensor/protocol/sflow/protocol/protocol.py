@@ -93,4 +93,4 @@ class CounterSample(object):
             if d:
                 self.counters[counter_format] = d(xdrlib.Unpacker(counter))
             else:
-                print "Unknown format:", counter_format
+                print("Unknown format:", counter_format)

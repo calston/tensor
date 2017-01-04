@@ -2,12 +2,19 @@ import signal
 import json
 import time
 import urllib
-import exceptions
 import os
 
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
-from zope.interface import implements
+try:
+    from exceptions import IOError
+except ImportError:
+    pass
+
+from zope.interface import implementer
 
 from twisted.internet import reactor, protocol, defer, error
 from twisted.web.http_headers import Headers
@@ -79,11 +86,10 @@ class BodyReceiver(protocol.Protocol):
         self.buffer.seek(0)
         self.finished.callback(self.buffer)
 
+@implementer(IBodyProducer)
 class StringProducer(object):
     """String producer for writing to HTTP requests
     """
-    implements(IBodyProducer)
- 
     def __init__(self, body):
         self.body = body
         self.length = len(body)
@@ -282,7 +288,7 @@ class PersistentCache(object):
     def _acquire_cache(self):
         try:
             cache_file = open(self.location, 'r')
-        except exceptions.IOError:
+        except IOError:
             return {}
 
         cache = json.loads(cache_file.read())

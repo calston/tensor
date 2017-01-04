@@ -12,7 +12,7 @@ from twisted.internet import defer, reactor
 from twisted.web.client import Agent
 from twisted.web.http_headers import Headers
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
@@ -20,6 +20,7 @@ from tensor.objects import Source
 from tensor.utils import BodyReceiver
 
 
+@implementer(ITensorSource)
 class RiakStats(Source):
     """Returns GET/PUT rates for a Riak node
 
@@ -34,8 +35,6 @@ class RiakStats(Source):
 
     :(service name).latency: Time to complete request
     """
-
-    implements(ITensorSource)
 
     @defer.inlineCallbacks
     def _get_stats_from_node(self):

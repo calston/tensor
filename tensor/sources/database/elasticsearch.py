@@ -9,7 +9,7 @@
 from twisted.internet import defer
 from twisted.python import log
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
@@ -17,6 +17,8 @@ from tensor.objects import Source
 from tensor.aggregators import Counter64
 from tensor.protocol import elasticsearch
 
+
+@implementer(ITensorSource)
 class ElasticSearch(Source):
     """Reads elasticsearch metrics
 
@@ -40,8 +42,6 @@ class ElasticSearch(Source):
     :(service name).documents.rate: Documents per second
     :(service name).documents.size: Size of document store in bytes
     """
-
-    implements(ITensorSource)
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)

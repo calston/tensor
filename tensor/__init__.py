@@ -9,4 +9,3 @@ from tensor import service
 def makeService(config):
     # Create TensorService
     return service.TensorService(config)
-

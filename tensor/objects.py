@@ -2,7 +2,11 @@ import hashlib
 import re
 import time
 import socket
-import exceptions
+
+try:
+    from exceptions import NotImplementedError
+except ImportError:
+    pass
 
 from twisted.internet import task, defer
 from twisted.python import log
@@ -191,7 +195,7 @@ class Source(object):
             if event:
                 self.queueBack(event)
 
-        except Exception, e:
+        except Exception as e:
             log.msg("[%s] Unhandled error: %s" % (self.service, e))
 
         self.running = False
@@ -217,4 +221,4 @@ class Source(object):
         )
 
     def get(self):
-        raise exceptions.NotImplementedError()
+        raise NotImplementedError()

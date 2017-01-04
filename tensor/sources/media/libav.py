@@ -2,13 +2,14 @@ import time
 
 from twisted.internet import defer
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 from tensor.utils import fork
 
 
+@implementer(ITensorSource)
 class DarwinRTSP(Source):
     """Makes avprobe requests of a Darwin RTSP sample stream
     (sample_100kbit.mp4)
@@ -24,8 +25,6 @@ class DarwinRTSP(Source):
     You can also override the `hostname` argument to make it match
     metrics from that host.
     """
-
-    implements(ITensorSource)
 
     @defer.inlineCallbacks
     def get(self):

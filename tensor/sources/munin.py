@@ -13,7 +13,7 @@ from twisted.internet import defer, reactor
 from twisted.protocols.basic import LineReceiver
 from twisted.internet.protocol import ClientCreator
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
@@ -56,6 +56,7 @@ class MuninProtocol(LineReceiver):
         return self.d
         
 
+@implementer(ITensorSource)
 class MuninNode(Source):
     """Connects to munin-node and retrieves all metrics
 
@@ -71,8 +72,6 @@ class MuninNode(Source):
     :(service name).(plugin name).(keys...): A dot separated tree of
                                              munin plugin keys
     """
-
-    implements(ITensorSource)
 
     @defer.inlineCallbacks
     def get(self):

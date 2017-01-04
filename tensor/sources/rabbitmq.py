@@ -1,6 +1,6 @@
 import time
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 from twisted.python import log
@@ -10,6 +10,7 @@ from tensor.objects import Source
 from tensor.utils import fork
 
 
+@implementer(ITensorSource)
 class Queues(Source):
     """Returns Queue information for a particular vhost
 
@@ -26,7 +27,6 @@ class Queues(Source):
     :(service_name).(queue).unack_rate: Unacknowledge rate of change per second
 
     """
-    implements(ITensorSource)
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)

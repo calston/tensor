@@ -108,7 +108,7 @@ class ElasticSearch(Output):
                     log.msg(repr(result))
                     self.events.extend(events)
 
-            except Exception, e:
+            except Exception as e:
                 log.msg('Could not connect to elasticsearch ' + str(e))
                 self.events.extend(events)
 
