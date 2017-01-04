@@ -1,5 +1,6 @@
 import time
 import json
+import datetime
 
 from twisted.internet import reactor, defer, task
 from twisted.python import log
@@ -74,20 +75,15 @@ class ElasticSearch(Output):
         """
         self.t.stop()
 
-    def transposeEvent(self, event):
-        d = event.description
-        d['type'] = event.service
-        d['host'] = event.hostname
-        d['tags'] = event.tags
+    def transformEvent(self, e):
+        d = dict(e)
+        t = datetime.datetime.utcfromtimestamp(e.time)
+        d['@timestamp'] = t.isoformat()
 
-        if event._type=='log':
-            return d
-
-        return None
+        return d
 
     def sendEvents(self, events):
-        return self.client.bulkIndex(
-            [self.transposeEvent(e) for e in events])
+        return self.client.bulkIndex([self.transformEvent(e) for e in events])
 
     @defer.inlineCallbacks
     def tick(self):

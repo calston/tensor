@@ -64,17 +64,23 @@ class Event(object):
         return self.hostname + '.' + self.service
 
     def __repr__(self):
-        ser = ['%s=%s' % (k, repr(v)) for k,v in {
+        ser = ['%s=%s' % (k, repr(v)) for k,v in dict(self).items()]
+
+        return "<Event %s>" % (', '.join(ser))
+
+    def __iter__(self):
+        d = {
             'hostname': self.hostname,
             'state': self.state,
             'service': self.service,
             'metric': self.metric,
             'ttl': self.ttl,
             'tags': self.tags,
-            'aggregation': self.aggregation
-        }.items()]
-
-        return "<Event %s>" % (','.join(ser))
+            'time': self.time,
+            'description': self.description,
+        }
+        for k, v in d.items():
+            yield k, v
 
     def copyWithMetric(self, m):
         return Event(
@@ -150,6 +156,16 @@ class Source(object):
         self.hostname = config.get('hostname')
         if self.hostname is None:
             self.hostname = socket.gethostbyaddr(socket.gethostname())[0]
+
+        self.use_ssh = config.get('use_ssh', False)
+        self.ssh_host = config.get('ssh_host', self.hostname)
+        if self.use_ssh:
+            self.ssh_keyfile = config.get('ssh_keyfile', tensor.config.get('ssh_keyfile', None))
+            self.ssh_key = config.get('ssh_key', tensor.config.get('ssh_key', None))
+
+            if not (self.ssh_key or self.ssh_keyfile):
+                raise Exception("To use checks over SSH you must specify"
+                    " ssh_key or ssh_keyfile for the check or globally")
 
         self.tensor = tensor
 

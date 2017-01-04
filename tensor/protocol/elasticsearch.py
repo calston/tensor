@@ -21,14 +21,14 @@ class ElasticSearch(object):
     def _request(self, path, data=None, method='GET'):
         headers = {}
         if self.user:
-            authorization = b64encode('%s:%s' % (self.user, self.password))
+            authorization = b64encode('%s:%s' % (self.user, self.password)).decode()
             headers['Authorization'] = ['Basic ' + authorization]
 
         return utils.HTTPRequest().getJson(
-            self.url + path, method, headers=headers, data=data)
+            self.url + path, method, headers=headers, data=data.encode())
 
     def _gen_id(self):
-        return b64encode(uuid.uuid4().bytes).rstrip('=')
+        return b64encode(uuid.uuid4().bytes).decode().rstrip('=')
 
     def stats(self):
         return self._request('/_cluster/stats')
@@ -54,10 +54,11 @@ class ElasticSearch(object):
             d = {
                 "index": {
                     "_index": self._get_index(),
-                    "_type": row.get('type', 'log'),
+                    "_type": row.get('type', 'event'),
                     "_id": id,
                 }
             }
+
             serdata += json.dumps(d) + '\n'
             serdata += json.dumps(row) + '\n'
 
