@@ -80,6 +80,10 @@ class ElasticSearch(Output):
         t = datetime.datetime.utcfromtimestamp(e.time)
         d['@timestamp'] = t.isoformat()
 
+        if 'ttl' in d:
+            # Useless field to Elasticsearch
+            del d['ttl']
+
         return d
 
     def sendEvents(self, events):
