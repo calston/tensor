@@ -20,8 +20,8 @@ setup(
         'Twisted',
         'PyYaml',
         'protobuf',
-        'construct',
-        'pysnmp',
+        'construct<2.6',
+        'pysnmp==4.2.5',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
