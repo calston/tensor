@@ -8,6 +8,17 @@ from twisted.python.compat import nativeString
 from twisted.python.filepath import FilePath
 from twisted.python import log
 
+# Monkey patch noisy logs
+class FakeLog(object):
+    def msg(self, *a):
+        pass
+
+    def callWithLogger(self, *a, **kw):
+        return log.callWithLogger(*a, **kw)
+from twisted.conch.ssh import connection, channel
+connection.log = FakeLog()
+channel.log = FakeLog()
+
 try:
     from io import StringIO
 except ImportError:
