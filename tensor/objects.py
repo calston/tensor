@@ -217,8 +217,9 @@ class Source(object):
 
         if cHash in self.tensor.hostConnectorCache:
             self.ssh_client = self.tensor.hostConnectorCache.get(cHash)
-
+            self.ssh_connector = False
         else:
+            self.ssh_connector = True
             self.ssh_client = ssh.SSHClient(self.ssh_host, self.ssh_user,
                     self.ssh_port, password=self.ssh_password,
                     knownhosts=self.known_hosts)
@@ -238,7 +239,7 @@ class Source(object):
         """Starts the timer for this source"""
         self.td = self.t.start(self.inter)
 
-        if self.use_ssh:
+        if self.use_ssh and self.ssh_connector:
             self.ssh_client.connect()
 
     def stopTimer(self):
