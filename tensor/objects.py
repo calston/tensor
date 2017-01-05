@@ -211,9 +211,11 @@ class Source(object):
 
         self.ssh_keydb = []
 
-        cHash = hashlib.sha1(('%s:%s:%s:%s:%s:%s' % (
-            self.ssh_host, self.ssh_user, self.ssh_port, self.ssh_password,
-            self.ssh_key, self.ssh_keyfile)).encode()).hexdigest()
+        cHash = hashlib.sha1(':'.join((
+                        self.ssh_host, self.ssh_user, str(self.ssh_port),
+                        str(self.ssh_password), str(self.ssh_key),
+                        str(self.ssh_keyfile)
+                    ))).hexdigest()
 
         if cHash in self.tensor.hostConnectorCache:
             self.ssh_client = self.tensor.hostConnectorCache.get(cHash)
