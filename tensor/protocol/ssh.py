@@ -23,18 +23,18 @@ class SSHCommandProtocol(protocol.Protocol):
     def dataReceived(self, data):
         self.stdOut.write(data.decode())
 
-    def errReceived(self, data):
-        print(data)
+    def extReceived(self, code, data):
+        self.stdErr.write(data.decode())
 
     def connectionLost(self, reason):
         self.stdOut.seek(0)
         self.stdErr.seek(0)
         if reason.type is error.ConnectionDone:
             # Success
-            self.factory.done.callback((self.stdOut, self.stdErr, 0))
+            code = 0
         else:
-            print(reason.value)
-            self.factory.done.errback((self.stdOut, self.stdErr, reason.value.exitCode))
+            code = reason.value.exitCode
+        self.factory.done.callback((self.stdOut, self.stdErr, code))
 
 class SSHClient(object):
     def __init__(self, hostname, username, port, password=None,
@@ -133,25 +133,22 @@ class SSHClient(object):
         else:
             args = ''
 
-        e = SSHCommandClientEndpoint.existingConnection(self.connection, (env + command + args).encode())
+        e = SSHCommandClientEndpoint.existingConnection(self.connection,
+                (env + command + args).encode())
 
         factory = protocol.Factory()
         factory.protocol = SSHCommandProtocol
         factory.done = defer.Deferred()
 
-        def success(result):
-            print("res", result)
+        def finished(result):
             stdout, stderr, code = result
             return (stdout.read(), stderr.read(), code)
 
-        def failed(err):
-            print("err", err)
-            stdout, stderr, code = err
-            return (stdout.read(), stderr.read(), code)
-
-        factory.done.addCallback(success).addErrback(failed)
+        factory.done.addCallback(finished)
 
         def connected(connection):
+            # Be nice if Conch exposed this better...
+            connection.transport.extReceived = connection.extReceived
             return factory.done
 
         return e.connect(factory).addCallback(connected)
