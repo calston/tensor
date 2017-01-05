@@ -132,7 +132,7 @@ class SSHClient(object):
             log.msg("Connection to %s not yet ready" % (
                 self.hostname,))
 
-            return defer.maybeDeferred(lambda: None)
+            return defer.maybeDeferred(lambda: (None, "SSH not ready", 255))
 
         if env:
             env = ' '.join('%s=%s' % (k, v) for k, v in env.items()) + ' '
