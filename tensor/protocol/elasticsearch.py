@@ -62,4 +62,4 @@ class ElasticSearch(object):
             serdata += json.dumps(d) + '\n'
             serdata += json.dumps(row) + '\n'
 
-        return self._request('/_bulk', serdata.rstrip('\n'), 'PUT')
+        return self._request('/_bulk', serdata, 'PUT')
