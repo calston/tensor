@@ -11,6 +11,9 @@ except ImportError:
 from twisted.internet import task, defer
 from twisted.python import log
 
+from tensor.utils import fork
+from tensor.protocol import ssh
+
 class Event(object):
     """Tensor Event object
 
@@ -136,6 +139,8 @@ class Source(object):
 
     def __init__(self, config, queueBack, tensor):
         self.config = config
+        self.tensor = tensor
+
         self.t = task.LoopingCall(self.tick)
         self.td = None
         self.attributes = None
@@ -158,20 +163,73 @@ class Source(object):
             self.hostname = socket.gethostbyaddr(socket.gethostname())[0]
 
         self.use_ssh = config.get('use_ssh', False)
-        self.ssh_host = config.get('ssh_host', self.hostname)
+
         if self.use_ssh:
-            self.ssh_keyfile = config.get('ssh_keyfile', tensor.config.get('ssh_keyfile', None))
-            self.ssh_key = config.get('ssh_key', tensor.config.get('ssh_key', None))
-
-            if not (self.ssh_key or self.ssh_keyfile):
-                raise Exception("To use checks over SSH you must specify"
-                    " ssh_key or ssh_keyfile for the check or globally")
-
-        self.tensor = tensor
+            self._init_ssh()
 
         self.queueBack = self._queueBack(queueBack)
 
         self.running = False
+
+    def _init_ssh(self):
+        """ Configure SSH client options
+        """
+
+        self.ssh_host = self.config.get('ssh_host', self.hostname)
+
+        self.known_hosts = self.config.get('ssh_knownhosts_file',
+            self.tensor.config.get('ssh_knownhosts_file', None))
+
+        self.ssh_keyfile = self.config.get('ssh_keyfile',
+            self.tensor.config.get('ssh_keyfile', None))
+
+        self.ssh_key = self.config.get('ssh_key',
+            self.tensor.config.get('ssh_key', None))
+
+        # Not sure why you'd bother but maybe you've got a weird policy
+        self.ssh_keypass = self.config.get('ssh_keypass',
+            self.tensor.config.get('ssh_keypass', None))
+
+        self.ssh_user = self.config.get('ssh_username',
+            self.tensor.config.get('ssh_username', None))
+
+        self.ssh_password = self.config.get('ssh_password',
+            self.tensor.config.get('ssh_password', None))
+
+        self.ssh_port = self.config.get('ssh_port',
+            self.tensor.config.get('ssh_port', 22))
+
+        # Verify config to see if we're good to go
+
+        if not (self.ssh_key or self.ssh_keyfile or self.ssh_password):
+            raise Exception("To use SSH you must specify *one* of ssh_key,"
+                            " ssh_keyfile or ssh_password for this source"
+                            " check or globally")
+
+        if not self.ssh_user:
+            raise Exception("ssh_username must be set")
+
+        self.ssh_keydb = []
+
+        cHash = hashlib.sha1(('%s:%s:%s:%s:%s:%s' % (
+            self.ssh_host, self.ssh_user, self.ssh_port, self.ssh_password,
+            self.ssh_key, self.ssh_keyfile)).encode()).hexdigest()
+
+        if cHash in self.tensor.hostConnectorCache:
+            self.ssh_client = self.tensor.hostConnectorCache.get(cHash)
+
+        else:
+            self.ssh_client = ssh.SSHClient(self.ssh_host, self.ssh_user,
+                    self.ssh_port, password=self.ssh_password,
+                    knownhosts=self.known_hosts)
+
+            if self.ssh_keyfile:
+                self.ssh_client.addKeyFile(self.ssh_keyfile, self.ssh_keypass)
+
+            if self.ssh_key:
+                self.ssh_client.addKeyString(self.ssh_key, self.ssh_keypass)
+
+            self.tensor.hostConnectorCache[cHash] = self.ssh_client
 
     def _queueBack(self, caller):
         return lambda events: caller(self, events)
@@ -180,14 +238,28 @@ class Source(object):
         """Starts the timer for this source"""
         self.td = self.t.start(self.inter)
 
+        if self.use_ssh:
+            self.ssh_client.connect()
+
     def stopTimer(self):
         """Stops the timer for this source"""
         self.td = None
         self.t.stop()
 
+    def fork(self, *a, **kw):
+        if self.use_ssh:
+            return self.ssh_client.fork(*a, **kw)
+        else:
+            return fork(*a, **kw)
+
     @defer.inlineCallbacks
     def _get(self):
-        event = yield defer.maybeDeferred(self.get)
+        if self.use_ssh:
+            event = yield defer.maybeDeferred(self.sshGet)
+
+        else:
+            event = yield defer.maybeDeferred(self.get)
+
         if self.config.get('debug', False):
             log.msg("[%s] Tick: %s" % (self.config['service'], event))
 
@@ -238,3 +310,6 @@ class Source(object):
 
     def get(self):
         raise NotImplementedError()
+
+    def sshGet(self):
+        raise NotImplementedError("This source does not implement SSH remote checks")

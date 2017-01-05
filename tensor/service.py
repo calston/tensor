@@ -29,6 +29,8 @@ class TensorService(service.Service):
         self.critical = {}
         self.warn = {}
 
+        self.hostConnectorCache = {}
+
         self.eventCounter = 0
 
         self.factory = None

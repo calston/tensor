@@ -19,10 +19,20 @@ class LoadAverage(Source):
     :(service name): Load average
     """
 
-    def get(self):
-        la1 = open('/proc/loadavg', 'rt').read().split()[0]
+    def _parse_loadaverage(self, data):
+        la1 = data.split()[0]
 
         return self.createEvent('ok', 'Load average', float(la1))
+
+    def get(self):
+        return self._parse_loadaverage(open('/proc/loadavg', 'rt').read())
+
+    @defer.inlineCallbacks
+    def sshGet(self):
+        loadavg = yield self.fork('/bin/cat /proc/loadavg')
+
+        if loadavg:
+            defer.returnValue(self._parse_loadaverage(loadavg))
 
 
 @implementer(ITensorSource)
@@ -53,18 +63,9 @@ class DiskIO(Source):
         self.trc = {}
         self.twc = {}
 
-    def _getstats(self):
-        stats = open('/proc/diskstats', 'rt').read()
-
-        return stats.strip('\n').split('\n')
-
-    def get(self):
+    def _parse_stats(self, stats):
         disks = {}
         events = []
-
-        stats = self._getstats()
-
-
         for s in stats:
             parts = s.strip().split()
             n = parts[2]
@@ -138,6 +139,25 @@ class DiskIO(Source):
                 ])
 
         return events
+
+    @defer.inlineCallbacks
+    def sshGet(self):
+        
+        diskstats = yield self.fork('/bin/cat /proc/diskstats')
+
+        if diskstats:
+            stats = diskstats.strip('\n').split('\n')
+            defer.returnValue(
+                self._parse_stats(stats))
+            
+    def _getstats(self):
+        stats = open('/proc/diskstats', 'rt').read()
+
+        return stats.strip('\n').split('\n')
+
+    def get(self):
+        stats = self._getstats()
+        return self._parse_stats(stats)
 
 
 @implementer(ITensorSource)
