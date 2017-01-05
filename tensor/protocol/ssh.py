@@ -2,7 +2,7 @@ from twisted.conch.ssh.keys import EncryptedKeyError, Key
 from twisted.conch.client.knownhosts import KnownHostsFile
 from twisted.conch.endpoints import SSHCommandClientEndpoint
 
-from twisted.internet import defer, protocol, endpoints, reactor
+from twisted.internet import defer, protocol, endpoints, reactor, error
 
 from twisted.python.compat import nativeString
 from twisted.python.filepath import FilePath
@@ -18,13 +18,23 @@ class SSHCommandProtocol(protocol.Protocol):
     def connectionMade(self):
         self.finished = defer.Deferred()
         self.stdOut = StringIO()
+        self.stdErr = StringIO()
 
     def dataReceived(self, data):
         self.stdOut.write(data.decode())
 
+    def errReceived(self, data):
+        print(data)
+
     def connectionLost(self, reason):
         self.stdOut.seek(0)
-        self.factory.done.callback(self.stdOut)
+        self.stdErr.seek(0)
+        if reason.type is error.ConnectionDone:
+            # Success
+            self.factory.done.callback((self.stdOut, self.stdErr, 0))
+        else:
+            print(reason.value)
+            self.factory.done.errback((self.stdOut, self.stdErr, reason.value.exitCode))
 
 class SSHClient(object):
     def __init__(self, hostname, username, port, password=None,
@@ -106,12 +116,12 @@ class SSHClient(object):
 
         return d
 
-    @defer.inlineCallbacks
     def fork(self, command, args=(), env={}, path=None, timeout=3600):
         if not self.connection:
             log.msg("Connection to %s not yet ready" % (
                 self.hostname,))
-            defer.returnValue(None)
+
+            return defer.maybeDeferred(lambda: None)
 
         if env:
             env = ' '.join('%s=%s' % (k, v) for k, v in env.items()) + ' '
@@ -129,6 +139,19 @@ class SSHClient(object):
         factory.protocol = SSHCommandProtocol
         factory.done = defer.Deferred()
 
-        yield e.connect(factory)
-        result = yield factory.done
-        defer.returnValue(result.read())
+        def success(result):
+            print("res", result)
+            stdout, stderr, code = result
+            return (stdout.read(), stderr.read(), code)
+
+        def failed(err):
+            print("err", err)
+            stdout, stderr, code = err
+            return (stdout.read(), stderr.read(), code)
+
+        factory.done.addCallback(success).addErrback(failed)
+
+        def connected(connection):
+            return factory.done
+
+        return e.connect(factory).addCallback(connected)

@@ -136,6 +136,7 @@ class Source(object):
     """
 
     sync = False
+    ssh = False
 
     def __init__(self, config, queueBack, tensor):
         self.config = config
@@ -257,7 +258,7 @@ class Source(object):
 
     @defer.inlineCallbacks
     def _get(self):
-        if self.use_ssh:
+        if self.use_ssh and not self.ssh:
             event = yield defer.maybeDeferred(self.sshGet)
 
         else:

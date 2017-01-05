@@ -29,9 +29,11 @@ class LoadAverage(Source):
 
     @defer.inlineCallbacks
     def sshGet(self):
-        loadavg = yield self.fork('/bin/cat /proc/loadavg')
+        loadavg = yield self.fork('/bin/cat /proc/loadavgasdf')
 
-        if loadavg:
+        print(loadavg)
+
+        if code < 1:
             defer.returnValue(self._parse_loadaverage(loadavg))
 
 
