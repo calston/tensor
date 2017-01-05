@@ -219,21 +219,30 @@ class CPU(Source):
 
         return None
 
-    def get(self):
-        stat = self._read_proc_stat()
-        stats = self._calculate_metrics(stat)
-        
-        if stats:
+    def _transpose_metrics(self, metrics):
+        if metrics:
             events = [
                 self.createEvent('ok', 'CPU %s %s%%' % (name, int(cpu_m * 100)), cpu_m, prefix=name)
-                for name, cpu_m in stats[1:]
+                for name, cpu_m in metrics[1:]
             ]
 
             events.append(self.createEvent(
-                'ok', 'CPU %s%%' % int(stats[0][1] * 100), stats[0][1]))
+                'ok', 'CPU %s%%' % int(metrics[0][1] * 100), metrics[0][1]))
 
             return events
+        return None
 
+    @defer.inlineCallbacks
+    def sshGet(self):
+        procstat = yield self.fork('/usr/bin/head -n 1 /proc/stat')
+        if procstat:
+            stats = self._calculate_metrics(procstat.strip('\n'))
+            defer.returnValue(self._transpose_metrics(stats))
+
+    def get(self):
+        stat = self._read_proc_stat()
+        stats = self._calculate_metrics(stat)
+        return self._transpose_metrics(stats)
 
 @implementer(ITensorSource)
 class Memory(Source):
