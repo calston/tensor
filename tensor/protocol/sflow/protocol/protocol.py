@@ -6,6 +6,7 @@ from tensor.protocol.sflow.protocol import flows, counters
 class Sflow(object):
     def __init__(self, payload, host):
         self.host = host
+        assert isinstance(payload, bytes)
         u = xdrlib.Unpacker(payload)
 
         self.version = u.unpack_uint()
@@ -93,4 +94,4 @@ class CounterSample(object):
             if d:
                 self.counters[counter_format] = d(xdrlib.Unpacker(counter))
             else:
-                print "Unknown format:", counter_format
+                print("Unknown format:", counter_format)

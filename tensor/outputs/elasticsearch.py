@@ -1,5 +1,6 @@
 import time
 import json
+import datetime
 
 from twisted.internet import reactor, defer, task
 from twisted.python import log
@@ -14,10 +15,8 @@ from tensor.protocol import elasticsearch
 
 from tensor.objects import Output
 
-class ElasticSearchLog(Output):
+class ElasticSearch(Output):
     """ElasticSearch HTTP API output
-
-    This Output transposes events to a Logstash format
 
     **Configuration arguments:**
 
@@ -33,6 +32,9 @@ class ElasticSearchLog(Output):
     :type user: str
     :param password: Optional basic auth password
     :type password: str
+    :param index: Index name format to store documents in Elastic
+                  (default: tensor-%Y.%m.%d)
+    :type index: str
     """
     def __init__(self, *a):
         Output.__init__(self, *a)
@@ -49,6 +51,8 @@ class ElasticSearchLog(Output):
 
         maxrate = int(self.config.get('maxrate', 100))
 
+        self.index = self.config.get('index', 'tensor-%Y.%m.%d')
+
         if maxrate > 0:
             self.queueDepth = int(maxrate * self.inter)
         else:
@@ -62,7 +66,7 @@ class ElasticSearchLog(Output):
         port = int(self.config.get('port', 9200))
 
         self.client = elasticsearch.ElasticSearch(self.url, self.user,
-            self.password)
+            self.password, self.index)
 
         self.t.start(self.inter)
 
@@ -71,20 +75,19 @@ class ElasticSearchLog(Output):
         """
         self.t.stop()
 
-    def transposeEvent(self, event):
-        d = event.description
-        d['type'] = event.service
-        d['host'] = event.hostname
-        d['tags'] = event.tags
+    def transformEvent(self, e):
+        d = dict(e)
+        t = datetime.datetime.utcfromtimestamp(e.time)
+        d['@timestamp'] = t.isoformat()
 
-        if event._type=='log':
-            return d
+        if 'ttl' in d:
+            # Useless field to Elasticsearch
+            del d['ttl']
 
-        return None
+        return d
 
     def sendEvents(self, events):
-        return self.client.bulkIndex(
-            [self.transposeEvent(e) for e in events])
+        return self.client.bulkIndex([self.transformEvent(e) for e in events])
 
     @defer.inlineCallbacks
     def tick(self):
@@ -105,7 +108,7 @@ class ElasticSearchLog(Output):
                     log.msg(repr(result))
                     self.events.extend(events)
 
-            except Exception, e:
+            except Exception as e:
                 log.msg('Could not connect to elasticsearch ' + str(e))
                 self.events.extend(events)
 
@@ -119,3 +122,5 @@ class ElasticSearchLog(Output):
         if (self.maxsize < 1) or (len(self.events) < self.maxsize):
             self.events.extend(events)
 
+# Backward compatibility stub
+ElasticSearchLog = ElasticSearch

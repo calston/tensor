@@ -12,7 +12,7 @@ from twisted.internet import defer, reactor
 from twisted.names import client
 from twisted.internet.protocol import Factory
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source, Event
@@ -52,6 +52,7 @@ class RiemannTCPFactory(Factory):
     def buildProtocol(self, addr):
         return RiemannTCPServer(self.source)
 
+@implementer(ITensorSource)
 class RiemannTCP(Source):
     """Provides a listening server which accepts Riemann metrics
     and proxies them to our queue.
@@ -62,8 +63,6 @@ class RiemannTCP(Source):
     :type port: int.
 
     """
-    implements(ITensorSource)
-
     def startTimer(self):
         """Creates a Riemann TCP server instead of a timer
         """

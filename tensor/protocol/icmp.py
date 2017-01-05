@@ -4,7 +4,7 @@ import fcntl
 import random
 import struct
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import task, defer, reactor, udp
 from twisted.internet.protocol import DatagramProtocol
@@ -183,11 +183,10 @@ class ICMPPing(DatagramProtocol):
     def startProtocol(self):
         self.startPing()
 
+@implementer(ISystemHandle)
 class ICMPPort(udp.Port):
     """Raw socket listener for ICMP
     """
-    implements(ISystemHandle)
-
     maxThroughput = 256 * 1024
 
     def createInternetSocket(self):

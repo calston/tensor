@@ -29,6 +29,8 @@ class TensorService(service.Service):
         self.critical = {}
         self.warn = {}
 
+        self.hostConnectorCache = {}
+
         self.eventCounter = 0
 
         self.factory = None
@@ -83,7 +85,7 @@ class TensorService(service.Service):
         self.inter = self.config.get('interval', 60.0)
 
         if self.debug:
-            print "config:", repr(config)
+            print("config:", repr(config))
 
         self.setupSources(self.config)
 
@@ -301,7 +303,7 @@ class TensorService(service.Service):
                         s = self.sources.pop(i)
                         try:
                             s.t.stop()
-                        except Exception, e:
+                        except Exception as e:
                             log.msg("Could not stop timer for %s: %s" % (
                                 sn, e))
 
@@ -313,7 +315,7 @@ class TensorService(service.Service):
                         source = self.createSource(config)
 
                         reactor.callLater(0, self._startSource, source)
-                except Exception, e:
+                except Exception as e:
                     log.msg("Could not reset source %s: %s" % (
                         sn, e))
 

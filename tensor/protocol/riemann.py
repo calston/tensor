@@ -1,7 +1,7 @@
 from tensor.ihateprotobuf import proto_pb2
 from tensor.interfaces import ITensorProtocol
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.protocols.basic import Int32StringReceiver
 from twisted.internet.protocol import DatagramProtocol
@@ -57,10 +57,10 @@ class RiemannProtobufMixin(object):
         self.pressure += 1
         self.sendString(self.encodeMessage(events))
 
+@implementer(ITensorProtocol)
 class RiemannProtocol(Int32StringReceiver, RiemannProtobufMixin):
     """Riemann protobuf protocol
     """
-    implements(ITensorProtocol)
 
     def __init__(self):
         self.pressure = 0
@@ -121,10 +121,10 @@ class RiemannClientFactory(protocol.ReconnectingClientFactory):
         protocol.ReconnectingClientFactory.clientConnectionFailed(
             self, connector, reason)
 
+@implementer(ITensorProtocol)
 class RiemannUDP(DatagramProtocol, RiemannProtobufMixin):
     """UDP datagram protocol for Riemann
     """
-    implements(ITensorProtocol)
 
     def __init__(self, host, port):
         self.host = host

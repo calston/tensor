@@ -11,14 +11,15 @@ import time
 from twisted.internet import defer, reactor
 from twisted.python import log
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 from tensor.protocol import icmp
 
-from tensor.utils import fork, HTTPRequest, Timeout
+from tensor.utils import HTTPRequest, Timeout
 
+@implementer(ITensorSource)
 class HTTP(Source):
     """Performs an HTTP request
 
@@ -39,8 +40,6 @@ class HTTP(Source):
 
     :(service name).latency: Time to complete request
     """
-
-    implements(ITensorSource)
 
     @defer.inlineCallbacks
     def get(self):
@@ -64,7 +63,7 @@ class HTTP(Source):
                 self.createEvent('critical', '%s - timeout' % url, t_delta,
                     prefix="latency")
             )
-        except Exception, e:
+        except Exception as e:
             log.msg('[%s] Request error %s' % (url, e))
             t_delta = (time.time() - t0) * 1000
             defer.returnValue(
@@ -87,6 +86,7 @@ class HTTP(Source):
                 prefix="latency")
         )
 
+@implementer(ITensorSource)
 class Ping(Source):
     """Performs an Ping checks against a destination
 
@@ -103,8 +103,6 @@ class Ping(Source):
     You can also override the `hostname` argument to make it match
     metrics from that host.
     """
-
-    implements(ITensorSource)
 
     @defer.inlineCallbacks
     def get(self):

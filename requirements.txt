@@ -1,5 +1,6 @@
 Twisted
 PyYaml
 protobuf
-construct
+construct<2.6
 pysnmp==4.2.5
+cryptography

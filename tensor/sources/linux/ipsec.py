@@ -1,11 +1,12 @@
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
-from tensor.utils import fork
 
+
+@implementer(ITensorSource)
 class StrongSwan(Source):
     """Returns the status of strongSwan IPSec tunnels
 
@@ -13,11 +14,11 @@ class StrongSwan(Source):
 
     :(service name).(peer name): Tunnel status
     """
-    implements(ITensorSource)
+    ssh = True
 
     @defer.inlineCallbacks
     def get(self):
-        out, err, code = yield fork('/usr/bin/sudo', args=(
+        out, err, code = yield self.fork('/usr/bin/sudo', args=(
             'ipsec', 'statusall'))
 
         connections = {}

@@ -141,7 +141,7 @@ class TestLinuxSources(unittest.TestCase):
             'interval': 1.0, 
             'service': 'http', 
             'ttl': 60,
-            'url': 'http://imcol.in/'
+            'url': 'http://httpbin.org'
         }, self._qb, None)
 
         event = yield s._get()
@@ -321,7 +321,8 @@ class TestRiakSources(unittest.TestCase):
             self.addCleanup(listener.stopListening)
             return listener
 
-        data = static.Data(json.dumps(stats), 'application/json')
+        data = static.Data(json.dumps(stats).encode(), 'application/json')
+        
         data.isLeaf = True
         site = server.Site(data)
         endpoint = endpoints.TCP4ServerEndpoint(reactor, 0)

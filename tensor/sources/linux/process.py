@@ -1,11 +1,11 @@
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
-from tensor.utils import fork
 
+@implementer(ITensorSource)
 class ProcessCount(Source):
     """Returns the ps count on the system
 
@@ -13,11 +13,12 @@ class ProcessCount(Source):
 
     :(service name): Number of processes
     """
-    implements(ITensorSource)
+
+    ssh = True
 
     @defer.inlineCallbacks
     def get(self):
-        out, err, code = yield fork('/bin/ps', args=('-e',))
+        out, err, code = yield self.fork('/bin/ps', args=('-e',))
 
         count = len(out.strip('\n').split('\n')) - 1
 
@@ -25,6 +26,7 @@ class ProcessCount(Source):
             self.createEvent('ok', 'Process count %s' % (count), count)
         )
 
+@implementer(ITensorSource)
 class ProcessStats(Source):
     """Returns memory used by each active parent process
 
@@ -36,11 +38,12 @@ class ProcessStats(Source):
     :(service name).user.(user name).cpu: Per user CPU usage
     :(service name).user.(user name).memory: Per user memory use
     """
-    implements(ITensorSource)
+
+    ssh = True
 
     @defer.inlineCallbacks
     def get(self):
-        out, err, code = yield fork('/bin/ps', args=(
+        out, err, code = yield self.fork('/bin/ps', args=(
             '-eo','pid,user,etime,rss,pcpu,comm,cmd'))
 
         lines = out.strip('\n').split('\n')

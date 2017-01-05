@@ -1,6 +1,6 @@
 import time
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 
@@ -10,6 +10,7 @@ from tensor.utils import fork
 from tensor.aggregators import Counter64
 
 
+@implementer(ITensorSource)
 class LoadAverage(Source):
     """Reports system load average for the current host
 
@@ -17,14 +18,26 @@ class LoadAverage(Source):
 
     :(service name): Load average
     """
-    implements(ITensorSource)
 
-    def get(self):
-        la1 = open('/proc/loadavg', 'rt').read().split()[0]
+    def _parse_loadaverage(self, data):
+        la1 = data.split()[0]
 
         return self.createEvent('ok', 'Load average', float(la1))
 
+    def get(self):
+        return self._parse_loadaverage(open('/proc/loadavg', 'rt').read())
 
+    @defer.inlineCallbacks
+    def sshGet(self):
+        loadavg, err, code = yield self.fork('/bin/cat /proc/loadavg')
+
+        if code == 0:
+            defer.returnValue(self._parse_loadaverage(loadavg))
+        else:
+            raise Exception(err)
+
+
+@implementer(ITensorSource)
 class DiskIO(Source):
     """Reports disk IO statistics per device
 
@@ -43,8 +56,6 @@ class DiskIO(Source):
     :(service name).(device name).write_latency: Disk write latency
     """
 
-    implements(ITensorSource)
-
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)
 
@@ -54,18 +65,9 @@ class DiskIO(Source):
         self.trc = {}
         self.twc = {}
 
-    def _getstats(self):
-        stats = open('/proc/diskstats', 'rt').read()
-
-        return stats.strip('\n').split('\n')
-
-    def get(self):
+    def _parse_stats(self, stats):
         disks = {}
         events = []
-
-        stats = self._getstats()
-
-
         for s in stats:
             parts = s.strip().split()
             n = parts[2]
@@ -140,7 +142,28 @@ class DiskIO(Source):
 
         return events
 
+    @defer.inlineCallbacks
+    def sshGet(self):
+        diskstats, err, code = yield self.fork('/bin/cat /proc/diskstats')
 
+        if code == 0:
+            stats = diskstats.strip('\n').split('\n')
+            defer.returnValue(
+                self._parse_stats(stats))
+        else:
+            raise Exception(err)
+            
+    def _getstats(self):
+        stats = open('/proc/diskstats', 'rt').read()
+
+        return stats.strip('\n').split('\n')
+
+    def get(self):
+        stats = self._getstats()
+        return self._parse_stats(stats)
+
+
+@implementer(ITensorSource)
 class CPU(Source):
     """Reports system CPU utilisation as a percentage/100
 
@@ -149,7 +172,6 @@ class CPU(Source):
     :(service name): Percentage CPU utilisation
     :(service name).(type): Percentage CPU utilisation by type
     """
-    implements(ITensorSource)
 
     cols = ['user', 'nice', 'system', 'idle', 'iowait', 'irq',
         'softirq', 'steal', 'guest', 'guest_nice']
@@ -200,22 +222,35 @@ class CPU(Source):
 
         return None
 
-    def get(self):
-        stat = self._read_proc_stat()
-        stats = self._calculate_metrics(stat)
-        
-        if stats:
+    def _transpose_metrics(self, metrics):
+        if metrics:
             events = [
                 self.createEvent('ok', 'CPU %s %s%%' % (name, int(cpu_m * 100)), cpu_m, prefix=name)
-                for name, cpu_m in stats[1:]
+                for name, cpu_m in metrics[1:]
             ]
 
             events.append(self.createEvent(
-                'ok', 'CPU %s%%' % int(stats[0][1] * 100), stats[0][1]))
+                'ok', 'CPU %s%%' % int(metrics[0][1] * 100), metrics[0][1]))
 
             return events
+        return None
+
+    @defer.inlineCallbacks
+    def sshGet(self):
+        procstat, err, code = yield self.fork('/usr/bin/head -n 1 /proc/stat')
+        if code == 0:
+            stats = self._calculate_metrics(procstat.strip('\n'))
+            defer.returnValue(self._transpose_metrics(stats))
+        else:
+            raise Exception(err)
+
+    def get(self):
+        stat = self._read_proc_stat()
+        stats = self._calculate_metrics(stat)
+        return self._transpose_metrics(stats)
 
 
+@implementer(ITensorSource)
 class Memory(Source):
     """Reports system memory utilisation as a percentage/100
 
@@ -223,10 +258,8 @@ class Memory(Source):
 
     :(service name): Percentage memory utilisation
     """
-    implements(ITensorSource)
 
-    def get(self):
-        mem = open('/proc/meminfo')
+    def _parse_stats(self, mem):
         dat = {}
         for l in mem:
             k, v = l.replace(':', '').split()[:2]
@@ -238,8 +271,22 @@ class Memory(Source):
 
         return self.createEvent('ok', 'Memory %s/%s' % (used, total),
                                 used/float(total))
+ 
+    def get(self):
+        mem = open('/proc/meminfo')
+        return self._parse_stats(mem)
+
+    @defer.inlineCallbacks
+    def sshGet(self):
+        mem, err, code = yield self.fork('/bin/cat /proc/meminfo')
+
+        if code == 0:
+            defer.returnValue(self._parse_stats(mem.strip('\n').split('\n')))
+        else:
+            raise Exception(err)
 
 
+@implementer(ITensorSource)
 class DiskFree(Source):
     """Returns the free space for all mounted filesystems
 
@@ -254,13 +301,14 @@ class DiskFree(Source):
     :(service name).(device).bytes: Used space (kbytes)
     :(service name).(device).free: Free space (kbytes)
     """
-    implements(ITensorSource)
+
+    ssh = True
 
     @defer.inlineCallbacks
     def get(self):
         disks = self.config.get('disks')
 
-        out, err, code = yield fork('/bin/df', args=('-lPx', 'tmpfs',))
+        out, err, code = yield self.fork('/bin/df', args=('-lPx', 'tmpfs',))
 
         out = [i.split() for i in out.strip('\n').split('\n')[1:]]
 
@@ -285,6 +333,7 @@ class DiskFree(Source):
 
         defer.returnValue(events)
 
+@implementer(ITensorSource)
 class Network(Source):
     """Returns all network interface statistics
 
@@ -302,19 +351,12 @@ class Network(Source):
     :(service name).(device).rx_packets: Packets received
     :(service name).(device).rx_errors: Errors
     """
-    implements(ITensorSource)
 
-    def _readStats(self):
-        proc_dev = open('/proc/net/dev', 'rt').read()
-
-        return proc_dev.strip('\n').split('\n')[2:]
-
-    def get(self):
+    def _parse_stats(self, stats):
         ifaces = self.config.get('interfaces')
-
         ev = []
 
-        for stat in self._readStats():
+        for stat in stats:
             items = stat.split()
             iface = items[0].strip(':')
 
@@ -356,3 +398,20 @@ class Network(Source):
             ])
 
         return ev
+
+    def _readStats(self):
+        proc_dev = open('/proc/net/dev', 'rt').read()
+
+        return proc_dev.strip('\n').split('\n')[2:]
+    
+    @defer.inlineCallbacks
+    def sshGet(self):
+        net, err, code = yield self.fork('/bin/cat /proc/net/dev')
+
+        if code == 0:
+            defer.returnValue(self._parse_stats(net.strip('\n').split('\n')[2:]))
+        else:
+            raise Exception(err)
+
+    def get(self):
+        return self._parse_stats(self._readStats())

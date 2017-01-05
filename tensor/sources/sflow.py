@@ -11,7 +11,7 @@ import time
 from twisted.internet import defer, reactor
 from twisted.names import client
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
@@ -170,6 +170,7 @@ class sFlowReceiver(server.DatagramReceiver):
         else:
             return _hostcb(None, host)
 
+@implementer(ITensorSource)
 class sFlow(Source):
     """Provides an sFlow server Source
 
@@ -187,8 +188,6 @@ class sFlow(Source):
     (device).(service name).(interface).ip
     (device).(service name).(interface).port
     """
-
-    implements(ITensorSource)
 
     def get(self):
         pass

@@ -10,7 +10,7 @@ import json
 
 from twisted.internet import defer, reactor
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
@@ -19,6 +19,7 @@ from tensor.utils import HTTPRequest, PersistentCache
 from tensor.aggregators import Counter64
 
 
+@implementer(ITensorSource)
 class ContainerStats(Source):
     """Returns stats for Docker containers on this host
 
@@ -42,8 +43,6 @@ class ContainerStats(Source):
     then `container name` will be used instead of that.
 
     """
-
-    implements(ITensorSource)
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)

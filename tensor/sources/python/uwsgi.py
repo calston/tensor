@@ -8,13 +8,17 @@
 
 import time
 import json
-import StringIO
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from twisted.internet import defer, reactor
 from twisted.protocols.basic import LineReceiver
 from twisted.internet.protocol import ClientCreator, Protocol
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
@@ -27,7 +31,7 @@ class JSONProtocol(Protocol):
     delimiter = '\n'
     def __init__(self):
         self.ready = False
-        self.buffer = StringIO.StringIO()
+        self.buffer = StringIO()
         self.d = defer.Deferred()
 
     def dataReceived(self, data):
@@ -41,6 +45,7 @@ class JSONProtocol(Protocol):
         return self.transport.loseConnection()
 
 
+@implementer(ITensorSource)
 class Emperor(Source):
     """Connects to UWSGI Emperor stats and creates useful metrics
 
@@ -52,8 +57,6 @@ class Emperor(Source):
     :type port: int.
     
     """
-
-    implements(ITensorSource)
 
     @defer.inlineCallbacks
     def get(self):

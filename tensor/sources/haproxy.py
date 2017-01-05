@@ -12,14 +12,16 @@ from base64 import b64encode
 
 from twisted.internet import defer
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 
-from tensor.utils import HTTPRequest, fork
+from tensor.utils import HTTPRequest
 from tensor.aggregators import Counter
 
+
+@implementer(ITensorSource)
 class HAProxy(Source):
     """Reads Nginx stub_status
 
@@ -36,8 +38,6 @@ class HAProxy(Source):
 
     :(service name).(backend|frontend|nodes).(stats): Various statistics
     """
-
-    implements(ITensorSource)
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)
@@ -77,7 +77,7 @@ class HAProxy(Source):
 
             events.append(self.createEvent('ok',
                 'Connection ok', 1, prefix='state'))
-        except Exception, e:
+        except Exception as e:
             defer.returnValue(self.createEvent('critical',
                 'Connection failed: %s' % (str(e)), 0, prefix='state'))
 

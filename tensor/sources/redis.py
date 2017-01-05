@@ -1,15 +1,16 @@
 import time
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 from twisted.python import log
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
-from tensor.utils import fork
 from tensor.aggregators import Counter
 
+
+@implementer(ITensorSource)
 class Queues(Source):
     """Query llen from redis-cli
 
@@ -27,7 +28,7 @@ class Queues(Source):
     :(service_name): Queue length
     :(service_name): Queue rate
     """
-    implements(ITensorSource)
+    ssh = True
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)
@@ -40,7 +41,7 @@ class Queues(Source):
     @defer.inlineCallbacks
     def get(self):
 
-        out, err, code = yield fork(self.clipath,
+        out, err, code = yield self.fork(self.clipath,
             args=('-n', str(self.db), 'llen', self.queue,)
         )
 

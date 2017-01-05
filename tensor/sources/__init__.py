@@ -1,12 +1,14 @@
 import time
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 
+
+@implementer(ITensorSource)
 class Tensor(Source):
     """Reports Tensor information about numbers of checks
     and queue sizes.
@@ -18,7 +20,6 @@ class Tensor(Source):
     :(service name).event qsize: Number of events held in the queue
     :(service name).sources: Number of sources running
     """
-    implements(ITensorSource)
 
     def __init__(self, *a):
         Source.__init__(self, *a)

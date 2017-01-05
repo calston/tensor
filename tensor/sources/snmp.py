@@ -10,7 +10,7 @@ import time
 
 from twisted.internet import reactor, defer
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
@@ -95,6 +95,7 @@ class SNMPConnection(object):
     def walk(self, oid):
         return self._walk(oid)
 
+@implementer(ITensorSource)
 class SNMP(Source):
     """Connects to an SNMP agent and retrieves OIDs
 
@@ -108,7 +109,6 @@ class SNMP(Source):
     :type community: str.
     """
 
-    implements(ITensorSource)
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)
 

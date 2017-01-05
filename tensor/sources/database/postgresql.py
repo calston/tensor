@@ -13,13 +13,15 @@ from twisted.internet import defer
 from twisted.enterprise import adbapi
 from twisted.python import log
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 
 from tensor.aggregators import Counter64
 
+
+@implementer(ITensorSource)
 class PostgreSQL(Source):
     """Reads PostgreSQL metrics
 
@@ -38,8 +40,6 @@ class PostgreSQL(Source):
 
     :(service name).(database name).(metrics): Metrics from pg_stat_database
     """
-
-    implements(ITensorSource)
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)
@@ -105,7 +105,7 @@ class PostgreSQL(Source):
             log.msg('tensor.sources.database.postgresql.PostgreSQL'
                 ' requires psycopg2')
             defer.returnValue(None)
-        except Exception, e:
+        except Exception as e:
             defer.returnValue(self.createEvent('critical',
                 'Connection error: %s' % str(e).replace('\n',' '),
                 0, prefix='state')

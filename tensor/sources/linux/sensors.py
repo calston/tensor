@@ -1,13 +1,14 @@
 import os
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
-from tensor.utils import fork
 
+
+@implementer(ITensorSource)
 class Sensors(Source):
     """Returns lm-sensors output
 
@@ -19,12 +20,11 @@ class Sensors(Source):
 
     :(service name).(adapter).(sensor): Sensor value
     """
-    implements(ITensorSource)
-
+    ssh = True
 
     @defer.inlineCallbacks
     def _get_sensors(self):
-        out, err, code = yield fork('/usr/bin/sensors')
+        out, err, code = yield self.fork('/usr/bin/sensors')
         if code == 0:
             defer.returnValue(out.strip('\n').split('\n'))
         else:
@@ -81,6 +81,7 @@ class Sensors(Source):
         
         defer.returnValue(events)
 
+@implementer(ITensorSource)
 class SMART(Source):
     """Returns SMART output for all disks
 
@@ -88,7 +89,8 @@ class SMART(Source):
 
     :(service name).(disk).(sensor): Sensor value
     """
-    implements(ITensorSource)
+
+    ssh = True
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)
@@ -97,7 +99,7 @@ class SMART(Source):
 
     @defer.inlineCallbacks
     def _get_disks(self):
-        out, err, code = yield fork('/usr/sbin/smartctl',
+        out, err, code = yield self.fork('/usr/sbin/smartctl',
             args=('--scan',))
 
         if code != 0:
@@ -113,7 +115,7 @@ class SMART(Source):
 
     @defer.inlineCallbacks
     def _get_smart(self, device):
-        out, err, code = yield fork('/usr/sbin/smartctl',
+        out, err, code = yield self.fork('/usr/sbin/smartctl',
             args=('-A', device))
 
         if code == 0:

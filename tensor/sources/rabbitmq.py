@@ -1,15 +1,15 @@
 import time
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 from twisted.python import log
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
-from tensor.utils import fork
 
 
+@implementer(ITensorSource)
 class Queues(Source):
     """Returns Queue information for a particular vhost
 
@@ -26,7 +26,7 @@ class Queues(Source):
     :(service_name).(queue).unack_rate: Unacknowledge rate of change per second
 
     """
-    implements(ITensorSource)
+    ssh = True
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)
@@ -45,7 +45,7 @@ class Queues(Source):
 
         mqctl = self.config.get('rabbitmqctl', '/usr/sbin/rabbitmqctl')
 
-        out, err, code = yield fork(mqctl, args=(
+        out, err, code = yield self.fork(mqctl, args=(
             'list_queues', '-p', vhost, 'name', 'messages_ready',
             'messages_unacknowledged'
         ))
