@@ -6,8 +6,10 @@
 Welcome to Tensor's documentation!
 ==================================
 
-Tensor is a modular gateway and event router for Riemann, built using the
-Twisted framework.
+Tensor is a modular gateway and event router built using the
+Twisted framework. It can be used as a monitoring agent and ETL
+framework for a wide range of applications, and provides a simple
+yet "powerful" plugin mechanism to expand its capabilities.
 
 Contents:
 

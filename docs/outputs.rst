@@ -16,17 +16,18 @@ queue `interval` config setting as the queue is emptied. This list of
 :class:`tensor.objects.Event` objects must not be altered by the output.
 
 The `output` configuration option is passed a string representing an object
-the same way as `sources` configurations are ::
+the same way as `sources` configurations are. For example this outputs events
+to Riemann over TCP::
 
     outputs:
         - output: tensor.outputs.riemann.RiemannTCP
           server: 127.0.0.1
           port: 5555
 
-Using TLS
-=========
+Using TLS with Riemann
+======================
 
-The TCP output also supports TLS, which can make use of Puppet certs for
+The RiemannTCP output also supports TLS, which can make use of Puppet certs for
 convenience ::
 
     outputs:
@@ -74,3 +75,5 @@ You should now see how many events are exiting in the Tensor log file ::
     2014-10-24 15:35:29+0200 [-] Events dequeued: 2
     2014-10-24 15:35:30+0200 [-] Events dequeued: 3
 
+Events can be routed in different ways to outputs, see the Getting started
+guide for more details
