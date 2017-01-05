@@ -4,7 +4,6 @@ from twisted.internet import defer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
-from tensor.utils import fork
 
 
 @implementer(ITensorSource)
@@ -15,10 +14,11 @@ class StrongSwan(Source):
 
     :(service name).(peer name): Tunnel status
     """
+    ssh = True
 
     @defer.inlineCallbacks
     def get(self):
-        out, err, code = yield fork('/usr/bin/sudo', args=(
+        out, err, code = yield self.fork('/usr/bin/sudo', args=(
             'ipsec', 'statusall'))
 
         connections = {}

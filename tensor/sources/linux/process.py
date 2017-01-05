@@ -4,7 +4,6 @@ from twisted.internet import defer
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
-from tensor.utils import fork
 
 @implementer(ITensorSource)
 class ProcessCount(Source):
@@ -19,7 +18,7 @@ class ProcessCount(Source):
 
     @defer.inlineCallbacks
     def get(self):
-        out, err, code = yield fork('/bin/ps', args=('-e',))
+        out, err, code = yield self.fork('/bin/ps', args=('-e',))
 
         count = len(out.strip('\n').split('\n')) - 1
 
@@ -44,7 +43,7 @@ class ProcessStats(Source):
 
     @defer.inlineCallbacks
     def get(self):
-        out, err, code = yield fork('/bin/ps', args=(
+        out, err, code = yield self.fork('/bin/ps', args=(
             '-eo','pid,user,etime,rss,pcpu,comm,cmd'))
 
         lines = out.strip('\n').split('\n')

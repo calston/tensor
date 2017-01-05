@@ -17,7 +17,7 @@ from zope.interface import implementer
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 
-from tensor.utils import HTTPRequest, fork
+from tensor.utils import HTTPRequest
 from tensor.aggregators import Counter
 
 

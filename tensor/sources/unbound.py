@@ -5,7 +5,6 @@ from twisted.python import log
 
 from tensor.interfaces import ITensorSource
 from tensor.objects import Source
-from tensor.utils import fork
 
 
 @implementer(ITensorSource)
@@ -19,6 +18,7 @@ class Stats(Source):
     :type executable: str.
 
     """
+    ssh = True
 
     def __init__(self, *a, **kw):
         Source.__init__(self, *a, **kw)
@@ -27,7 +27,7 @@ class Stats(Source):
 
     @defer.inlineCallbacks
     def _get_uc_stats(self):
-        out, err, code = yield fork(self.uc, args=('stats', ))
+        out, err, code = yield self.fork(self.uc, args=('stats', ))
         
         if code == 0:
             defer.returnValue(out.strip('\n').split('\n'))

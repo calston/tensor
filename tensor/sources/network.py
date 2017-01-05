@@ -17,7 +17,7 @@ from tensor.interfaces import ITensorSource
 from tensor.objects import Source
 from tensor.protocol import icmp
 
-from tensor.utils import fork, HTTPRequest, Timeout
+from tensor.utils import HTTPRequest, Timeout
 
 @implementer(ITensorSource)
 class HTTP(Source):
