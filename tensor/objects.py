@@ -215,7 +215,7 @@ class Source(object):
                         self.ssh_host, self.ssh_user, str(self.ssh_port),
                         str(self.ssh_password), str(self.ssh_key),
                         str(self.ssh_keyfile)
-                    ))).hexdigest()
+                    )).encode()).hexdigest()
 
         if cHash in self.tensor.hostConnectorCache:
             self.ssh_client = self.tensor.hostConnectorCache.get(cHash)
