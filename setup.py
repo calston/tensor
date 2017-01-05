@@ -22,6 +22,7 @@ setup(
         'protobuf',
         'construct<2.6',
         'pysnmp==4.2.5',
+        'cryptography',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
