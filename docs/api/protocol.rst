@@ -22,6 +22,13 @@ tensor.protocol.riemann
    :members:
    :show-inheritance:
 
+tensor.protocol.ssh
+=====================
+
+.. automodule:: tensor.protocol.ssh
+   :members:
+   :show-inheritance:
+
 tensor.protocol.sflow
 =====================
 
