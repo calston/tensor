@@ -29,12 +29,12 @@ class LoadAverage(Source):
 
     @defer.inlineCallbacks
     def sshGet(self):
-        loadavg = yield self.fork('/bin/cat /proc/loadavgasdf')
+        loadavg, err, code = yield self.fork('/bin/cat /proc/loadavg')
 
-        print(loadavg)
-
-        if code < 1:
+        if code == 0:
             defer.returnValue(self._parse_loadaverage(loadavg))
+        else:
+            raise Exception(err)
 
 
 @implementer(ITensorSource)
@@ -144,13 +144,14 @@ class DiskIO(Source):
 
     @defer.inlineCallbacks
     def sshGet(self):
-        
-        diskstats = yield self.fork('/bin/cat /proc/diskstats')
+        diskstats, err, code = yield self.fork('/bin/cat /proc/diskstats')
 
-        if diskstats:
+        if code == 0:
             stats = diskstats.strip('\n').split('\n')
             defer.returnValue(
                 self._parse_stats(stats))
+        else:
+            raise Exception(err)
             
     def _getstats(self):
         stats = open('/proc/diskstats', 'rt').read()
@@ -236,15 +237,18 @@ class CPU(Source):
 
     @defer.inlineCallbacks
     def sshGet(self):
-        procstat = yield self.fork('/usr/bin/head -n 1 /proc/stat')
-        if procstat:
+        procstat, err, code = yield self.fork('/usr/bin/head -n 1 /proc/stat')
+        if code == 0:
             stats = self._calculate_metrics(procstat.strip('\n'))
             defer.returnValue(self._transpose_metrics(stats))
+        else:
+            raise Exception(err)
 
     def get(self):
         stat = self._read_proc_stat()
         stats = self._calculate_metrics(stat)
         return self._transpose_metrics(stats)
+
 
 @implementer(ITensorSource)
 class Memory(Source):
@@ -255,8 +259,7 @@ class Memory(Source):
     :(service name): Percentage memory utilisation
     """
 
-    def get(self):
-        mem = open('/proc/meminfo')
+    def _parse_stats(self, mem):
         dat = {}
         for l in mem:
             k, v = l.replace(':', '').split()[:2]
@@ -268,6 +271,19 @@ class Memory(Source):
 
         return self.createEvent('ok', 'Memory %s/%s' % (used, total),
                                 used/float(total))
+ 
+    def get(self):
+        mem = open('/proc/meminfo')
+        return self._parse_stats(mem)
+
+    @defer.inlineCallbacks
+    def sshGet(self):
+        mem, err, code = yield self.fork('/bin/cat /proc/meminfo')
+
+        if code == 0:
+            defer.returnValue(self._parse_stats(mem.strip('\n').split('\n')))
+        else:
+            raise Exception(err)
 
 
 @implementer(ITensorSource)
@@ -286,11 +302,13 @@ class DiskFree(Source):
     :(service name).(device).free: Free space (kbytes)
     """
 
+    ssh = True
+
     @defer.inlineCallbacks
     def get(self):
         disks = self.config.get('disks')
 
-        out, err, code = yield fork('/bin/df', args=('-lPx', 'tmpfs',))
+        out, err, code = yield self.fork('/bin/df', args=('-lPx', 'tmpfs',))
 
         out = [i.split() for i in out.strip('\n').split('\n')[1:]]
 
@@ -334,17 +352,11 @@ class Network(Source):
     :(service name).(device).rx_errors: Errors
     """
 
-    def _readStats(self):
-        proc_dev = open('/proc/net/dev', 'rt').read()
-
-        return proc_dev.strip('\n').split('\n')[2:]
-
-    def get(self):
+    def _parse_stats(self, stats):
         ifaces = self.config.get('interfaces')
-
         ev = []
 
-        for stat in self._readStats():
+        for stat in stats:
             items = stat.split()
             iface = items[0].strip(':')
 
@@ -386,3 +398,20 @@ class Network(Source):
             ])
 
         return ev
+
+    def _readStats(self):
+        proc_dev = open('/proc/net/dev', 'rt').read()
+
+        return proc_dev.strip('\n').split('\n')[2:]
+    
+    @defer.inlineCallbacks
+    def sshGet(self):
+        net, err, code = yield self.fork('/bin/cat /proc/net/dev')
+
+        if code == 0:
+            defer.returnValue(self._parse_stats(net.strip('\n').split('\n')[2:]))
+        else:
+            raise Exception(err)
+
+    def get(self):
+        return self._parse_stats(self._readStats())

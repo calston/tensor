@@ -15,6 +15,8 @@ class ProcessCount(Source):
     :(service name): Number of processes
     """
 
+    ssh = True
+
     @defer.inlineCallbacks
     def get(self):
         out, err, code = yield fork('/bin/ps', args=('-e',))
@@ -37,6 +39,8 @@ class ProcessStats(Source):
     :(service name).user.(user name).cpu: Per user CPU usage
     :(service name).user.(user name).memory: Per user memory use
     """
+
+    ssh = True
 
     @defer.inlineCallbacks
     def get(self):
