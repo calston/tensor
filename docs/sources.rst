@@ -38,13 +38,13 @@ names.
 
 A "Hello world" source::
 
-    from zope.interface import implements
+    from zope.interface import implementer
 
     from tensor.interfaces import ITensorSource
     from tensor.objects import Source
 
+    @implementer(ITensorSource)
     class HelloWorld(Source):
-        implements(ITensorSource)
         
         def get(self):
             return self.createEvent('ok', 'Hello world!', 0)
@@ -54,14 +54,13 @@ arguments remain the same.
 
 Extending the above example to create a simple flip-flop metric event::
 
-    from zope.interface import implements
+    from zope.interface import implementer
 
     from tensor.interfaces import ITensorSource
     from tensor.objects import Source
 
+    @implementer(ITensorSource)
     class HelloWorld(Source):
-        implements(ITensorSource)
-
         def __init__(self, *a):
             Source.__init__(self, *a)
             self.bit = False
@@ -109,7 +108,7 @@ execute other processes.
 The simplest example of a source which executes an external process is the
 ProcessCount check::
 
-    from zope.interface import implements
+    from zope.interface import implementer
 
     from twisted.internet import defer
 
@@ -117,9 +116,8 @@ ProcessCount check::
     from tensor.objects import Source
     from tensor.utils import fork
 
+    @implementer(ITensorSource)
     class ProcessCount(Source):
-        implements(ITensorSource)
-
         @defer.inlineCallbacks
         def get(self):
             out, err, code = yield fork('/bin/ps', args=('-e',))
@@ -151,7 +149,7 @@ Here is an example of a source which listens for TCP connections to port
     from twisted.protocols.basic import LineReceiver
     from twisted.internet import reactor
 
-    from zope.interface import implements
+    from zope.interface import implementer
 
     from tensor.interfaces import ITensorSource
     from tensor.objects import Source
@@ -180,9 +178,8 @@ Here is an example of a source which listens for TCP connections to port
         def buildProtocol(self, addr):
             return Numbers(self.source)
 
+    @implementer(ITensorSource)
     class NumberProxy(Source):
-        implements(ITensorSource)
-
         def startTimer(self):
             # Override starting the source timer, we don't need it
             f = NumbersFactory(self)
