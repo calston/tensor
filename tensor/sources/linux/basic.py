@@ -297,7 +297,7 @@ class DiskFree(Source):
 
     **Metrics:**
 
-    :(service name).(device): Used space (%)
+    :(service name).(device).used: Used space (%)
     :(service name).(device).bytes: Used space (kbytes)
     :(service name).(device).free: Free space (kbytes)
     """
@@ -324,7 +324,7 @@ class DiskFree(Source):
                 free = int(free)
                 events.extend([
                     self.createEvent('ok', 'Disk usage %s%%' % (util),
-                                     util, prefix=disk),
+                                     util, prefix="%s.used" % disk),
                     self.createEvent('ok', 'Disk usage %s kB' % (used),
                                      used, prefix="%s.bytes" % disk),
                     self.createEvent('ok', 'Disk free %s kB' % (free),
