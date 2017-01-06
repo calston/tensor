@@ -44,7 +44,7 @@ class ProcessStats(Source):
     @defer.inlineCallbacks
     def get(self):
         out, err, code = yield self.fork('/bin/ps', args=(
-            '-eo','pid,user,etime,rss,pcpu,comm,cmd'))
+            '-eo','pid,user:50,etime,rss,pcpu,comm:50,cmd:255'))
 
         lines = out.strip('\n').split('\n')
 
@@ -88,7 +88,7 @@ class ProcessStats(Source):
                 pid = proc['PID']
                 cmd = proc['CMD']
                 comm = proc['COMMAND']
-                user = proc['USER']
+                user = proc['USER'].lower().replace('+', '').strip('-')
 
                 mem = int(proc['RSS'])/1024.0
                 cpu = float(proc['%CPU'])
@@ -106,7 +106,8 @@ class ProcessStats(Source):
                 else:
                     key = comm
 
-                key = key.strip('.')
+                key = key.strip('.').replace('+', '').strip('-').replace(
+                    '(', '').replace(')', '').lower().split('.')[0]
 
                 if key in procs:
                     procs[key]['cpu'] += cpu
