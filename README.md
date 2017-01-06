@@ -1,7 +1,7 @@
 Tensor
 ======
 
-Tensor is now known as (https://github.com/calston/duct)[Duct]
+Tensor is now known as [Duct](https://github.com/calston/duct)
 
 [![Build Status](https://travis-ci.org/calston/tensor.png?branch=master)](https://travis-ci.org/calston/tensor) [![Latest Docs](https://readthedocs.org/projects/tensor/badge/?version=latest)](http://tensor.readthedocs.org)
 
